@@ -1,0 +1,18 @@
+{
+ "id": "morphing_figures",
+ "kind": "scene",
+ "cost": 3,
+ "shader": "morphing_figures.frag",
+ "doc": "9 морфящихся SDF-фигур (сфера → куб → тор → октаэдр → треугольник → конус → капсула → чайник → додекаэдр) с орбитальной камерой и 8 объёмными частицами. Neon magenta-cyan-lime палитра. Порт из preview.html.",
+ "suits": {
+  "feel": [
+   "warmth",
+   "delight"
+  ]
+ },
+ "atoms": {
+  "energy": 0.7,
+  "temperature": 3
+ },
+ "uniforms": {}
+}

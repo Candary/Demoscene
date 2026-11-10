@@ -1,0 +1,37 @@
+{
+ "id": "sphere_scene",
+ "kind": "scene",
+ "cost": 3,
+ "shader": "sphere_scene.frag",
+ "doc": "Светящаяся сфера с орбитами.",
+ "suits": {
+  "feel": [
+   "delight",
+   "warmth"
+  ]
+ },
+ "atoms": {
+  "energy": 0.7
+ },
+ "uniforms": {
+  "uColor": {
+   "type": "vec3",
+   "role": "color",
+   "bind": "palette.primary"
+  },
+  "uGlow": {
+   "type": "float",
+   "min": 0,
+   "max": 2,
+   "default": 1,
+   "bind": "0.5 + energy"
+  },
+  "uOrbit": {
+   "type": "float",
+   "min": 0,
+   "max": 6.2832,
+   "default": 0,
+   "bind": "mod(t * 0.3, 6.2832)"
+  }
+ }
+}

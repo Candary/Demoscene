@@ -1,0 +1,23 @@
+{
+ "id": "credits",
+ "kind": "overlay",
+ "cost": 1,
+ "direct_blend": true,
+ "text": true,
+ "shader": "credits.frag",
+ "doc": "Титры (текст в шейдере/текстуре; строковых параметров в формате v1 нет).",
+ "uniforms": {
+  "uColor": {
+   "type": "vec3",
+   "role": "color",
+   "bind": "palette.text"
+  },
+  "uFade": {
+   "type": "float",
+   "min": 0,
+   "max": 1,
+   "default": 1,
+   "bind": "smoothstep(0,1.5,t) * (1 - smoothstep(dur-1.5,dur,t))"
+  }
+ }
+}

@@ -1,0 +1,35 @@
+{
+ "id": "cozy_room_sdf",
+ "kind": "scene",
+ "cost": 4,
+ "shader": "cozy_room_sdf.frag",
+ "doc": "SDF-комната из примитивов Cozy Engine (uPrimitives: 12 чисел на примитив, см. layout ассета); движок задаёт и uPrimitivesCount.",
+ "suits": {
+  "feel": [
+   "warmth",
+   "delight"
+  ]
+ },
+ "atoms": {
+  "energy": 0.3
+ },
+ "uniforms": {
+  "uPrimitives": {
+   "type": "farray",
+   "max": 6144,
+   "doc": "shape,axis,sx,sy,sz,px,py,pz,rot_y,r,g,b"
+  },
+  "uLightColor": {
+   "type": "vec3",
+   "role": "color",
+   "bind": "palette.accent"
+  },
+  "uCamAngle": {
+   "type": "float",
+   "min": -3.1416,
+   "max": 3.1416,
+   "default": 0,
+   "bind": "0.8 * sin(t * 0.1)"
+  }
+ }
+}

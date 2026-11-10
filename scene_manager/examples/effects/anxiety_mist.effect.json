@@ -1,0 +1,50 @@
+{
+ "id": "anxiety_mist",
+ "kind": "scene",
+ "cost": 3,
+ "shader": "anxiety_mist.frag",
+ "doc": "Тёмный туман с красными вспышками.",
+ "suits": {
+  "feel": [
+   "anxiety",
+   "tension"
+  ]
+ },
+ "atoms": {
+  "energy": 0.5,
+  "temperature": 2
+ },
+ "uniforms": {
+  "uPrimaryColor": {
+   "type": "vec3",
+   "role": "color",
+   "bind": "palette.primary"
+  },
+  "uAccentColor": {
+   "type": "vec3",
+   "role": "color",
+   "bind": "palette.accent"
+  },
+  "uIntensity": {
+   "type": "float",
+   "min": 0,
+   "max": 2,
+   "default": 1,
+   "bind": "energy"
+  },
+  "uMotionSpeed": {
+   "type": "float",
+   "min": 0,
+   "max": 3,
+   "default": 1,
+   "bind": "0.8 + energy*0.8"
+  },
+  "uWarmth": {
+   "type": "float",
+   "min": 0,
+   "max": 1,
+   "default": 0.5,
+   "bind": "temperature / 4"
+  }
+ }
+}

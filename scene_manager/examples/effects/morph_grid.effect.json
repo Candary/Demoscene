@@ -1,0 +1,38 @@
+{
+ "id": "morph_grid",
+ "kind": "scene",
+ "cost": 2,
+ "shader": "morph_grid.frag",
+ "doc": "Сетка, морфящаяся между формами.",
+ "suits": {
+  "feel": [
+   "neutral",
+   "tension",
+   "delight"
+  ]
+ },
+ "atoms": {
+  "energy": 0.5
+ },
+ "uniforms": {
+  "uColor": {
+   "type": "vec3",
+   "role": "color",
+   "bind": "palette.primary"
+  },
+  "uMorph": {
+   "type": "float",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "bind": "smoothstep(0,1,p)"
+  },
+  "uSpeed": {
+   "type": "float",
+   "min": 0,
+   "max": 3,
+   "default": 1,
+   "bind": "0.5 + energy"
+  }
+ }
+}

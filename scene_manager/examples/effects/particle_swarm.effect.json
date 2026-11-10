@@ -1,0 +1,37 @@
+{
+ "id": "particle_swarm",
+ "kind": "scene",
+ "cost": 3,
+ "shader": "particle_swarm.frag",
+ "doc": "Рой частиц, реагирует на энергию.",
+ "suits": {
+  "feel": [
+   "tension",
+   "delight"
+  ]
+ },
+ "atoms": {
+  "energy": 0.5
+ },
+ "uniforms": {
+  "uColor": {
+   "type": "vec3",
+   "role": "color",
+   "bind": "palette.accent"
+  },
+  "uSwarm": {
+   "type": "float",
+   "min": 0,
+   "max": 1,
+   "default": 0.5,
+   "bind": "clamp(energy,0,1)"
+  },
+  "uBeatKick": {
+   "type": "float",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "bind": "pow(1 - audio.beat_phase, 3)"
+  }
+ }
+}

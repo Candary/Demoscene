@@ -1,0 +1,50 @@
+{
+ "id": "nebula_raymarch",
+ "kind": "scene",
+ "cost": 4,
+ "shader": "nebula_raymarch.frag",
+ "doc": "Рэймарчинг туманности (основной эффект интро v49).",
+ "suits": {
+  "feel": [
+   "delight",
+   "warmth",
+   "neutral"
+  ]
+ },
+ "atoms": {
+  "energy": 0.5
+ },
+ "uniforms": {
+  "uPrimaryColor": {
+   "type": "vec3",
+   "role": "color",
+   "bind": "palette.primary"
+  },
+  "uAccentColor": {
+   "type": "vec3",
+   "role": "color",
+   "bind": "palette.accent"
+  },
+  "uIntensity": {
+   "type": "float",
+   "min": 0,
+   "max": 2,
+   "default": 1,
+   "bind": "0.4 + energy"
+  },
+  "uMotionSpeed": {
+   "type": "float",
+   "min": 0,
+   "max": 3,
+   "default": 1,
+   "bind": "0.6 + energy*0.8"
+  },
+  "uPulse": {
+   "type": "float",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "bind": "pow(1 - audio.beat_phase, 4) * 0.4"
+  }
+ }
+}
