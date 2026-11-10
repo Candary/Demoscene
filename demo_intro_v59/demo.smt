@@ -51,6 +51,12 @@ endclip
 clip t2 10 transition flash 48.0 52.0 48.0 4.0 normal 20202 s2 s3 45.0
 prog opacity 1 n:1.0
 prog progress 4 n:0.0 n:1.0 v:p f:smoothstep
+uni uColor vec3 3
+prog 1 n:1.0
+prog 1 n:1.0
+prog 1 n:1.0
+uni uPeak float 1
+prog 1 n:1.0
 endclip
 clip s4 10 scene anxiety_mist 73.0 102.0 75.0 25.0 normal 44444 - - 70.0
 prog opacity 1 n:1.0
@@ -89,6 +95,12 @@ endclip
 clip t4 10 transition flash 98.0 102.0 98.0 4.0 normal 40404 s4 s5 95.0
 prog opacity 1 n:1.0
 prog progress 4 n:0.0 n:1.0 v:p f:smoothstep
+uni uColor vec3 3
+prog 1 n:1.0
+prog 1 n:1.0
+prog 1 n:1.0
+uni uPeak float 1
+prog 1 n:1.0
 endclip
 clip s6 10 scene cozy_room_sdf 123.0 181.5 125.0 55.0 normal 66666 - - 120.0
 prog opacity 1 n:1.0
