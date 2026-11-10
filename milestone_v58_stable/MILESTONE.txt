@@ -1,0 +1,169 @@
+# Milestone v58 — STABLE (v55 + morphing_figures scene, 211s)
+# Дата фиксации: 2026-11-10
+# Среда подтверждения: Windows 11, NVIDIA GeForce GTX 750, driver 560.94, OpenGL 3.3
+
+ ============================================================================
+ MILESTONE v58 — Demo Runtime with morphing_figures finale (211s)
+ ============================================================================
+
+ СОСТОЯНИЕ
+   ✓ Сборка через MSVC без ошибок
+   ✓ 211-секундный прогон — 17209 кадров, средний 81.72 FPS
+   ✓ Чистый exit: [Done] → [Loop] Exited → [Stats] → [Exit]
+   ✓ morphing_figures scene работает корректно (порт из preview.html)
+   ✓ 1-секундный crossfade t6 между cozy_room и morphing_figures
+   ✓ F1 FPS counter с min/max/avg
+   ✓ Блок [Stats] в trace.log
+
+ ЭВОЛЮЦИЯ
+   v51   60 s,  6 shaders, без post, без HUD              3252 frames @ 54.2 FPS
+   v52   120 s, 8 shaders, bloom+vignette+grain            7296 frames @ 60.8 FPS
+   v53   + F1 FPS counter в заголовке                       7297 frames @ 60.8 FPS
+   v54   + min/max/avg FPS stats + [Stats] в trace.log      7287 frames @ 60.7 FPS
+   v55   + 3 новые сцены, 180s, 15 клипов                  14174 frames @ 78.9 FPS
+   v56   (эксперимент: anxiety_mist sync с WebGL) — отвергнут пользователем
+   v57   (эксперимент: weak post + brightened anxiety) — отвергнут пользователем
+   v58   + morphing_figures.frag + 1s crossfade + 30s = 211s  17209 frames @ 81.7 FPS  ★ FINAL
+
+ СОСТАВ v58
+   База: v55 stable (восстановлен из v53 + применены v54+v55 патчи)
+   + новый шейдер morphing_figures.frag (порт из preview.html)
+   + расширение .smt до 211s (17 clips, 13 segments)
+
+ НОВОЕ В v58 ОТНОСИТЕЛЬНО v55
+   1. Длительность: 180s → 211s (+31s)
+   2. Сцен: 6 → 7 (+ morphing_figures)
+   3. Переходов: 5 → 6 (+ t6 crossfade 1с)
+   4. Клипов в .smt: 15 → 17 (+ s7 + t6)
+   5. Сегментов: 11 → 13 (+ seg для t6 transition + seg для s7 simple)
+   6. Shader files: 11 → 12 (+ morphing_figures.frag)
+   7. Shader programs compiled: 14 → 15-16 (v58 trace показал 16 —
+      crossfade используется и в t1, t3, t5, t6)
+   8. Energy array: 45 → 53 значений (на 211с)
+   9. Sections: 4 → 5 ([0, 27, 77, 127, 181])
+  10. s6 cozy_room_sdf: eff_end extended 180→181 (для crossfade overlap)
+  11. blm/vig/grn: eff_end extended 180→211
+
+ ТАЙМ-ЛАЙН v58 (211 с)
+   T=0–25    s1 nebula_raymarch     (intro)
+   T=23–27   t1 crossfade           → sphere
+   T=25–50   s2 sphere_scene
+   T=48–52   t2 flash               → particle_swarm
+   T=50–75   s3 particle_swarm
+   T=73–77   t3 crossfade           → anxiety_mist
+   T=75–100  s4 anxiety_mist        (тёмный туман)
+   T=98–102  t4 flash               → morph_grid
+   T=100–125 s5 morph_grid          (5×5×5 grid)
+   T=123–127 t5 crossfade           → cozy_room_sdf
+   T=125–180 s6 cozy_room_sdf       (SDF комната)
+   T=180–181 t6 crossfade (1с)      → morphing_figures   ★ НОВОЕ
+   T=181–211 s7 morphing_figures    (финал 30s)          ★ НОВОЕ
+   T=0–211   blm + vig + grn       (post-effects поверх всех сцен)
+
+ НОВЫЙ ШЕЙДЕР morphing_figures.frag
+   Источник: порт из preview.html (WebGL2 → OpenGL 3.3 core)
+   Изменения при порте:
+     - #version 300 es → #version 330 core
+     - Убраны precision highp float/int
+     - Убран zoom (фиксировано 1.0)
+     - Убран mouse rotation (фиксировано 0,0)
+     - Убран fire mask (все 8 частиц видны)
+     - Убран DropletEffect (без эффекта капель)
+     - Убран applyToneMap toggle (всегда ACES)
+   Анимация:
+     - 9 SDF-фигур: сфера → куб → тор → октаэдр → треугольник → конус →
+       капсула → чайник → додекаэдр (цикл 36 с)
+     - 8 объёмных частиц на орбитах (светящиеся и полупрозрачные)
+     - Орбитальная камера (период ~21 с)
+     - Звёздный фон + градиентное небо
+     - Neon magenta-cyan-lime палитра
+     - ACES tonemap + gamma 2.2
+   Стандартные uniforms: uTime, uClipTime, uProgress, uGlobalTime, uResolution,
+     uSeed, uBeat, uBeatPhase, uBarPhase, uEnergy
+   Кастомных uniforms: нет (self-contained)
+   Производительность: ~100 FPS на GTX 750 (очень быстро, благодаря
+     bounding sphere check + lazy SDF eval + 48 шагов raymarch)
+
+ ПРОИЗВОДИТЕЛЬНОСТЬ v58 (из подтверждающего прогона)
+   Средний FPS: 81.72 (sampled) / 81.56 (theoretical)
+   Минимальный FPS: 21.27 (на nebula, raymarching)
+   Максимальный FPS: 100.79 (на лёгких сценах + morphing_figures)
+   Range: 79.5 FPS (структурный разброс по сценам)
+   Всего кадров: 17209 за 211.00s
+   Samples: 412 @ 0.5s window
+
+   FPS по сценам:
+     nebula_raymarch     ~23 FPS  (raymarching тяжёлый)
+     sphere_scene        ~89 FPS  (vsync не строгий)
+     particle_swarm      ~54 FPS  (стабильно)
+     anxiety_mist        ~96 FPS  (2D FBM, лёгкий)
+     morph_grid          ~98 FPS  (периодичность, лёгкий)
+     cozy_room_sdf       ~95 FPS  (48 шагов × 10 prims)
+     morphing_figures    ~100 FPS (★ самый быстрый — bounding sphere + lazy SDF)
+
+   morphing_figures — самая быстрая сцена в демо, благодаря оптимизациям
+   из preview.html (bounding sphere check исключает raymarch для лучей
+   мимо сцены, lazy SDF eval пропускает невычисленные фигуры).
+
+ АРХИТЕКТУРНЫЕ РЕШЕНИЯ (унаследованы + новые)
+   1-12. (как в v54)
+  13. Position-based SMT: clips могут ссылаться на любые эффекты (v55)
+  14. cozy_room_sdf.frag fix: b >= uPrimitivesCount (v55)
+  15. Multi-use effect crossfade (4×: t1,t3,t5,t6) и flash (2×: t2,t4) — кэш
+  16. morphing_figures.frag: порт из preview.html, неинтерактивный
+      (без zoom/mouse/droplets/fire, только анимация) (v58)
+  17. 1-секундный crossfade (t6) — самый короткий переход в демо
+      (обычно 4с), сделан резким для подчёркивания перехода в финал
+
+ УПРАВЛЕНИЕ
+   ESC  — выход
+   F1   — toggle FPS в заголовке (min/max/avg накапливаются всегда)
+
+ ИЗВЕСТНЫЕ НЕДОСТАТКИ
+   • cozy_room_sdf: "карттина съехала влево" — пользователь отметил,
+     "некритично". Не исправлено.
+   • v55 milestone zip был утрачен в ходе разработки (sandbox recycling
+     между сообщениями). v58 восстановлен из v53 baseline + применены
+     v54+v55 патчи вручную. Это не влияет на корректность v58.
+   • Per-scene stats не реализованы (только overall min/max/avg).
+   • Energy curve статична (зашита в .smt).
+   • Окно имеет рамку (не fullscreen).
+   • Bloom single-pass — не premium-качество.
+
+ ИЗВЕСТНЫЕ ОСОБЕННОСТИ v58 (не bugs)
+   • morphing_figures показывает ровно ту же анимацию что preview.html,
+     но БЕЗ интерактивности (нет вращения мышью, нет zoom, нет droplets,
+     нет fire на частицах). По дизайну — неинтерактивный финал.
+   • 1-секундный crossfade t6 — резкий переход (обычно 4с). Сделан
+     специально для подчёркивания смены mood (cozy → energetic figures).
+
+ ============================================================================
+ ВОЗМОЖНЫЕ НАПРАВЛЕНИЯ v59
+ ============================================================================
+
+   A. ТЮНИНГ morphing_figures
+      Сложность: низкая. Подобрать другую палитру, скорость морфинга,
+      радиус орбит частиц. Изменения только в .smt uniforms или шейдере.
+
+   B. AUDIO-REACTIVE
+      Сложность: средняя. Минимальный WAV reader + замена статической
+      energy[] на живой звук.
+
+   C. ON-SCREEN OVERLAY (текст поверх 3D-сцены)
+      Сложность: средняя. glRasterPos+glBitmap или freetype-gl.
+
+   D. FULLSCREEN MODE (WS_POPUP, F11 toggle)
+      Сложность: низкая. ~20 строк.
+
+   E. PER-SCENE FPS STATS
+      Сложность: низкая. ~30 строк.
+
+   F. MULTI-PASS BLOOM
+      Сложность: высокая. Premium-качество свечения.
+
+   G. EXPORT STATS TO JSON/CSV
+      Сложность: низкая. Для сравнения прогонов.
+
+   H. EXPAND morphing_figures
+      Сложность: средняя. Больше фигур, текстуры, пост-processing.
+ ============================================================================

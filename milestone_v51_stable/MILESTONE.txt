@@ -1,0 +1,67 @@
+# Milestone v51 — STABLE BASELINE
+# Дата фиксации: 2026-11-10
+# Среда подтверждения: Windows 11, NVIDIA GeForce GTX 750, driver 560.94, OpenGL 3.3
+
+ ============================================================================
+ MILESTONE v51 — Demo Runtime (стабильный baseline)
+ ============================================================================
+
+ СОСТОЯНИЕ
+   ✓ Сборка через MSVC (cl /std:c++17) без ошибок и предупреждений
+   ✓ Запуск на GTX 750 — окно видимо, GL контекст 3.3, vsync включён
+   ✓ Полный прогон 60.0 s без exception'ов и крашей
+   ✓ 3255 кадров за 60 s (средний 54.25 FPS)
+   ✓ Чистый выход: [Loop] Exited + [Exit]
+   ✓ trace.log читаем, все контрольные точки проходят
+
+ СОСТАВ ПОКАЗА (demo.smt)
+   duration: 60.0 s
+   clips:    7 (3 scene + 2 transition + 1 post + 1 finish event)
+   segments: 5
+   shaders:  6 скомпилированы (sphere_scene, particle_swarm, nebula_raymarch,
+             crossfade, flash, vignette)
+
+ ТАЙМ-ЛАЙН
+   0.0 – 13.0 s   nebula_raymarch           (RENDER→fbo0, POST vig fbo0→screen)
+  13.0 – 17.0 s   crossfade→sphere_scene    (RENDER s1, RENDER s2, TRANSITION)
+  17.0 – 28.0 s   sphere_scene              (RENDER→fbo0, POST vig)
+  28.0 – 32.0 s   flash→particle_swarm      (RENDER s2, RENDER s3, TRANSITION)
+  32.0 – 60.0 s   particle_swarm            (RENDER→fbo0, POST vig)
+   0.0 – 60.0 s   vignette (post, поверх)   (POST vig reads fbo0/fbo2 → screen)
+
+ ПРОИЗВОДИТЕЛЬНОСТЬ ПО ИНТЕРВАЛАМ
+   0–15 s   ~24 FPS   (nebula_raymarch raymarching — тяжелый)
+  15–25 s   ~84 FPS   (sphere_scene + crossfade transition — лёгкие)
+  25–35 s   ~67 FPS   (particle_swarm)
+  35–60 s   ~55 FPS   (устоявшийся режим)
+
+ АРХИТЕКТУРНЫЕ РЕШЕНИЯ v51
+   1. Window:        WS_OVERLAPPEDWINDOW + WS_EX_APPWINDOW (видно в taskbar)
+   2. Single-instance: CreateMutexA("Global\\DemoRT_v51_SingleInstance")
+   3. SMT parser:    position-based prog (1-й=opacity, 2-й=progress) + backward
+                     compat с явным "prog opacity ..."
+   4. safeRun():     пустые программы не бросают exception, возвращают 0
+   5. try/catch:     вокруг renderFrame в основном цикле — даёт читаемую ошибку
+                     вместо std::terminate
+   6. FBO pipeline:  RENDER→fboN, POST fboN→screen (не fboN→screen на чтение)
+   7. Render loop:   PeekMessage + renderFrame + SwapBuffers, единый цикл
+
+ КЛЮЧЕВЫЕ ФАЙЛЫ
+   demo_runtime.cpp    8888 bytes   — WinMain + window + GL context + loop
+   gl_executor.hpp    15827 bytes   — FBO pool, ShaderCache, executeOp, renderFrame
+   sm_runtime.hpp     12913 bytes   — SMT parser, RPN, audio_vars, segment_at
+   opengl_loader.h    10082 bytes   — GL 3.3 core function loader
+   demo.smt             2310 bytes   — данные показа
+
+ ИЗВЕСТНЫЕ НЕДОСТАТКИ (не блокирующие)
+   • Shader'ы anxiety_mist, morph_grid, cozy_room_sdf, bloom, grain — написаны,
+     но НЕ подключены к demo.smt. Готовы к использованию в v52.
+   • vsync в windowed mode на Windows может не строго лимитировать до 60 FPS
+     (видно по интервалу 15–25 s, FPS ~84).
+   • Окно имеет рамку (не fullscreen). Для demoscene можно переключить на
+     WS_POPUP позже, когда стабильность подтверждена.
+
+ ЭТОТ MILESTONE ЯВЛЯЕТСЯ БАЗОЙ ДЛЯ v52.
+ Любые расширения (новые сцены, post-effects, audio sync) должны делаться
+ поверх этого состояния, с возможностью отката обратно.
+ ============================================================================

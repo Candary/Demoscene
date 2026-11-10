@@ -1,0 +1,116 @@
+# Milestone v52 — STABLE (3 post-effects chain, 120s)
+# Дата фиксации: 2026-11-10
+# Среда подтверждения: Windows 11, NVIDIA GeForce GTX 750, driver 560.94, OpenGL 3.3
+
+ ============================================================================
+ MILESTONE v52 — Demo Runtime with bloom + vignette + grain post chain
+ ============================================================================
+
+ СОСТОЯНИЕ
+   ✓ Сборка через MSVC без ошибок
+   ✓ 120-секундный прогон на GTX 750 — 7296 кадров, средний 60.8 FPS
+   ✓ Бюджет ≥50 FPS выполнен с запасом (средний выше 60)
+   ✓ Чистый exit: [Loop] Exited + [Exit]
+   ✓ Все три post-effects (bloom + vignette + grain) корректно цепляются
+
+ ЭВОЛЮЦИЯ ОТ v51
+   v51   → 60 s,  6 shaders, 0 post-effects (только vignette)         3252 frames
+   iter1 → 120 s, 6 shaders, 1 post (vignette)                          7385 frames
+   iter2 → 120 s, 7 shaders, 2 post (+grain uAmount=0.20)              7355 frames
+   iter3 → 120 s, 8 shaders, 3 post (+bloom threshold=0.6, intensity=1.0, radius=4.0)
+                                                                        7296 frames ★ FINAL
+
+ СОСТАВ ПОКАЗА (demo.smt)
+   duration: 120.0 s
+   clips:    9 (3 scene + 2 transition + 3 post + 1 finish event)
+   segments: 5
+   shaders:  8 скомпилированы
+     scenes:      nebula_raymarch, sphere_scene, particle_swarm
+     transitions: crossfade, flash
+     post chain:  bloom → vignette → grain (выполняется в этом порядке)
+
+ ТАЙМ-ЛАЙН
+   0.0 – 23.0 s   nebula_raymarch           (raymarching, ~24 FPS)
+  23.0 – 27.0 s   crossfade→sphere_scene    (4 s переход)
+  27.0 – 63.0 s   sphere_scene              (~100 FPS, vsync не строгий)
+  63.0 – 67.0 s   flash→particle_swarm      (4 s переход)
+  67.0 –120.0 s   particle_swarm            (~55 FPS)
+   0.0 –120.0 s   bloom + vignette + grain  (поверх всех сцен)
+
+ POST-EFFECTS PIPELINE (iter.3)
+   Simple segment:
+     RENDER scene → fbo0
+     POST blm fbo0 → fbo1          (bloom: 12 circular samples, threshold 0.6, radius 4)
+     POST vig fbo1 → fbo2          (vignette: strength 0.35, softness 0.5)
+     POST grn fbo2 → screen        (grain: animated, uAmount 0.20)
+     PRESENT screen
+
+   Transition segment:
+     RENDER s1 → fbo0; RENDER s2 → fbo1; TRANSITION → fbo2
+     POST blm fbo2 → fbo3
+     POST vig fbo3 → fbo4
+     POST grn fbo4 → screen
+     PRESENT screen
+
+   FBO count: 3 (simple) / 5 (transition), все lazily allocated через FBOPool::get
+
+ ПРОИЗВОДИТЕЛЬНОСТЬ
+   Средний FPS: 60.8  (бюджет 50 — выполнен с запасом +21%)
+   Минимальный FPS: ~22 (на переходах с nebula, raymarching-тяжёлый шейдер)
+   Максимальный FPS: ~100 (sphere_scene, vsync в windowed не строгий на Win11)
+   Bloom cost:        ~1.5 мс/кадр (12 texture samples × 1280×720)
+   Vignette cost:     ~0.5 мс/кадр (1 sample)
+   Grain cost:        ~0.3 мс/кадр (1 sample + 1 hash)
+   Total post-chain:  ~2.3 мс/кадр (4.6% бюджета 16.7 мс при 60 FPS)
+
+ ЭНЕРГЕТИЧЕСКАЯ КРИВАЯ (audio.energy, 30 сэмплов @ rate 0.25 → каждые 4 с)
+   T=0–40:   плавный buildup 0.05 → 0.90
+   T=40–50:  climax 1.00 (двойной пик)
+   T=50–60:  спад 0.95 → 0.75 (подводка к переходу)
+   T=60–70:  всплеск 0.85 → 1.00 (flash transition)
+   T=70–80:  particle_swarm peak 1.00
+   T=80–120: плавный fade-out 0.85 → 0.20
+
+ АРХИТЕКТУРНЫЕ РЕШЕНИЯ v52 (унаследованы от v51 + новые)
+   1. Window:        WS_OVERLAPPEDWINDOW + WS_EX_APPWINDOW
+   2. Single-instance mutex
+   3. SMT parser:    position-based prog (1-й=opacity, 2-й=progress)
+   4. safeRun():     defensive — пустые программы не бросают exception
+   5. try/catch:     вокруг renderFrame в основном цикле
+   6. FBO pipeline:  последовательно, без read-write hazards
+   7. Render loop:   PeekMessage + renderFrame + SwapBuffers
+   8. POST chain:    blm → vig → grn (правильный порядок)
+   9. FBO lazy alloc: через std::map в FBOPool, не требует pre-declaration
+
+ ПАРАМЕТРЫ POST-EFFECTS (для будущего тюнинга)
+   bloom:
+     uThreshold = 0.6   (порог яркости, 0..2)
+     uIntensity = 1.0   (сила, 0..3)
+     uRadius    = 4.0   (радиус в пикселях, 0.1..4 — на верхней границе)
+   vignette:
+     uStrength  = 0.35  (затемнение краёв, 0..1)
+     uSoftness  = 0.5   (мягкость падения, 0.05..1)
+   grain:
+     uAmount    = 0.20  (амплитуда шума ±0.20 RGB, 0..0.5)
+
+ ИЗВЕСТНЫЕ НЕДОСТАТКИ (не блокирующие)
+   • Shader'ы anxiety_mist, morph_grid, cozy_room_sdf — написаны, но НЕ подключены
+     к demo.smt. Готовы к использованию в v53.
+   • На T=0–23 (nebula) FPS ~24 — raymarching тяжелый. Это не баг, особенность
+     шейдера на GTX 750. Можно оптимизировать снизив количество шагов march'а.
+   • Окно имеет рамку (не fullscreen). Для финального демо можно переключить
+     на WS_POPUP после всех проверок.
+   • Bloom single-pass с 12 семплами — приемлемое качество, но не идеальное.
+     Для premium-качества можно переписать на multi-pass separable Gaussian.
+   • Energy curve статична (зашита в .smt). Реальная audio-reactivity
+     (управление от аудио-файла) не реализована — переменные audio.beat /
+     audio.energy сейчас вычисляются из статической таблицы.
+
+ ЭТОТ MILESTONE ЯВЛЯЕТСЯ ФИНАЛОМ v52.
+ Возможные направления v53:
+   A. Новые сцены (anxiety_mist, morph_grid, cozy_room_sdf — shader'ы готовы)
+   B. Audio-reactive (завязка на реальный аудио-файл через минимальный PCM reader)
+   C. Visual polish существующих сцен (улучшение цветов, motion, глубины)
+   D. Fullscreen mode (WS_POPUP, переключение по F11)
+   E. Multi-pass bloom для premium-качества свечения
+ ============================================================================
