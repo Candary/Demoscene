@@ -113,15 +113,31 @@ clip t6 10 transition crossfade 180.0 181.0 180.0 1.0 normal 60606 s6 s7 0.0
 prog opacity 1 n:1.0
 prog progress 4 n:0.0 n:1.0 v:p f:smoothstep
 endclip
-clip blm 24 post bloom 0.0 211.0 0.0 211.0 normal 77007 - - 0.0
+clip blm_bright 24 post bloom_bright 0.0 211.0 0.0 211.0 normal 77007 - - 0.0
 prog opacity 1 n:1.0
 prog progress 4 v:p n:0.0 n:1.0 f:clamp
 uni uThreshold float 1
 prog 1 n:0.6
 uni uIntensity float 1
 prog 1 n:1.0
-uni uRadius float 1
-prog 1 n:4.0
+endclip
+clip blm_blurh 24 post bloom_blur 0.0 211.0 0.0 211.0 normal 77008 - - 0.0
+prog opacity 1 n:1.0
+prog progress 4 v:p n:0.0 n:1.0 f:clamp
+uni uDirection vec2 2
+prog 1 n:1.0
+prog 1 n:0.0
+endclip
+clip blm_blurv 24 post bloom_blur 0.0 211.0 0.0 211.0 normal 77009 - - 0.0
+prog opacity 1 n:1.0
+prog progress 4 v:p n:0.0 n:1.0 f:clamp
+uni uDirection vec2 2
+prog 1 n:0.0
+prog 1 n:1.0
+endclip
+clip blm_add 24 post passthrough 0.0 211.0 0.0 211.0 normal 77010 - - 0.0
+prog opacity 1 n:1.0
+prog progress 4 v:p n:0.0 n:1.0 f:clamp
 endclip
 clip vig 25 post vignette 0.0 211.0 0.0 211.0 normal 99001 - - 0.0
 prog opacity 1 n:1.0
@@ -141,107 +157,146 @@ clip fin 30 event finish 211.0 211.0 0.0 0.0 normal 77777 - - 0.0
 prog opacity 1 n:1.0
 prog progress 1 n:0.0
 endclip
-seg 0.0 23.0 5 3 5
+seg 0.0 23.0 8 3 8
 op RENDER s1 - fbo0 - -
-op POST blm fbo0 fbo1 - -
-op POST vig fbo1 fbo2 - -
-op POST grn fbo2 screen - -
+op POST blm_bright fbo0 fbo1 - -
+op POST blm_blurh fbo1 fbo2 - -
+op POST blm_blurv fbo2 fbo1 - -
+op COMPOSITE blm_add fbo1 - fbo0 add
+op POST vig fbo0 fbo1 - -
+op POST grn fbo1 screen - -
 op PRESENT - screen - - -
 endseg
-seg 23.0 27.0 7 5 7
+seg 23.0 27.0 10 5 10
 op RENDER s1 - fbo0 - -
 op RENDER s2 - fbo1 - -
 op TRANSITION t1 fbo0,fbo1 fbo2 - -
-op POST blm fbo2 fbo3 - -
-op POST vig fbo3 fbo4 - -
-op POST grn fbo4 screen - -
+op POST blm_bright fbo2 fbo3 - -
+op POST blm_blurh fbo3 fbo4 - -
+op POST blm_blurv fbo4 fbo3 - -
+op COMPOSITE blm_add fbo3 - fbo2 add
+op POST vig fbo2 fbo3 - -
+op POST grn fbo3 screen - -
 op PRESENT - screen - - -
 endseg
-seg 27.0 48.0 5 3 5
+seg 27.0 48.0 8 3 8
 op RENDER s2 - fbo0 - -
-op POST blm fbo0 fbo1 - -
-op POST vig fbo1 fbo2 - -
-op POST grn fbo2 screen - -
+op POST blm_bright fbo0 fbo1 - -
+op POST blm_blurh fbo1 fbo2 - -
+op POST blm_blurv fbo2 fbo1 - -
+op COMPOSITE blm_add fbo1 - fbo0 add
+op POST vig fbo0 fbo1 - -
+op POST grn fbo1 screen - -
 op PRESENT - screen - - -
 endseg
-seg 48.0 52.0 7 5 7
+seg 48.0 52.0 10 5 10
 op RENDER s2 - fbo0 - -
 op RENDER s3 - fbo1 - -
 op TRANSITION t2 fbo0,fbo1 fbo2 - -
-op POST blm fbo2 fbo3 - -
-op POST vig fbo3 fbo4 - -
-op POST grn fbo4 screen - -
+op POST blm_bright fbo2 fbo3 - -
+op POST blm_blurh fbo3 fbo4 - -
+op POST blm_blurv fbo4 fbo3 - -
+op COMPOSITE blm_add fbo3 - fbo2 add
+op POST vig fbo2 fbo3 - -
+op POST grn fbo3 screen - -
 op PRESENT - screen - - -
 endseg
-seg 52.0 73.0 5 3 5
+seg 52.0 73.0 8 3 8
 op RENDER s3 - fbo0 - -
-op POST blm fbo0 fbo1 - -
-op POST vig fbo1 fbo2 - -
-op POST grn fbo2 screen - -
+op POST blm_bright fbo0 fbo1 - -
+op POST blm_blurh fbo1 fbo2 - -
+op POST blm_blurv fbo2 fbo1 - -
+op COMPOSITE blm_add fbo1 - fbo0 add
+op POST vig fbo0 fbo1 - -
+op POST grn fbo1 screen - -
 op PRESENT - screen - - -
 endseg
-seg 73.0 77.0 7 5 7
+seg 73.0 77.0 10 5 10
 op RENDER s3 - fbo0 - -
 op RENDER s4 - fbo1 - -
 op TRANSITION t3 fbo0,fbo1 fbo2 - -
-op POST blm fbo2 fbo3 - -
-op POST vig fbo3 fbo4 - -
-op POST grn fbo4 screen - -
+op POST blm_bright fbo2 fbo3 - -
+op POST blm_blurh fbo3 fbo4 - -
+op POST blm_blurv fbo4 fbo3 - -
+op COMPOSITE blm_add fbo3 - fbo2 add
+op POST vig fbo2 fbo3 - -
+op POST grn fbo3 screen - -
 op PRESENT - screen - - -
 endseg
-seg 77.0 98.0 5 3 5
+seg 77.0 98.0 8 3 8
 op RENDER s4 - fbo0 - -
-op POST blm fbo0 fbo1 - -
-op POST vig fbo1 fbo2 - -
-op POST grn fbo2 screen - -
+op POST blm_bright fbo0 fbo1 - -
+op POST blm_blurh fbo1 fbo2 - -
+op POST blm_blurv fbo2 fbo1 - -
+op COMPOSITE blm_add fbo1 - fbo0 add
+op POST vig fbo0 fbo1 - -
+op POST grn fbo1 screen - -
 op PRESENT - screen - - -
 endseg
-seg 98.0 102.0 7 5 7
+seg 98.0 102.0 10 5 10
 op RENDER s4 - fbo0 - -
 op RENDER s5 - fbo1 - -
 op TRANSITION t4 fbo0,fbo1 fbo2 - -
-op POST blm fbo2 fbo3 - -
-op POST vig fbo3 fbo4 - -
-op POST grn fbo4 screen - -
+op POST blm_bright fbo2 fbo3 - -
+op POST blm_blurh fbo3 fbo4 - -
+op POST blm_blurv fbo4 fbo3 - -
+op COMPOSITE blm_add fbo3 - fbo2 add
+op POST vig fbo2 fbo3 - -
+op POST grn fbo3 screen - -
 op PRESENT - screen - - -
 endseg
-seg 102.0 123.0 5 3 5
+seg 102.0 123.0 8 3 8
 op RENDER s5 - fbo0 - -
-op POST blm fbo0 fbo1 - -
-op POST vig fbo1 fbo2 - -
-op POST grn fbo2 screen - -
+op POST blm_bright fbo0 fbo1 - -
+op POST blm_blurh fbo1 fbo2 - -
+op POST blm_blurv fbo2 fbo1 - -
+op COMPOSITE blm_add fbo1 - fbo0 add
+op POST vig fbo0 fbo1 - -
+op POST grn fbo1 screen - -
 op PRESENT - screen - - -
 endseg
-seg 123.0 127.0 7 5 7
+seg 123.0 127.0 10 5 10
 op RENDER s5 - fbo0 - -
 op RENDER s6 - fbo1 - -
 op TRANSITION t5 fbo0,fbo1 fbo2 - -
-op POST blm fbo2 fbo3 - -
-op POST vig fbo3 fbo4 - -
-op POST grn fbo4 screen - -
+op POST blm_bright fbo2 fbo3 - -
+op POST blm_blurh fbo3 fbo4 - -
+op POST blm_blurv fbo4 fbo3 - -
+op COMPOSITE blm_add fbo3 - fbo2 add
+op POST vig fbo2 fbo3 - -
+op POST grn fbo3 screen - -
 op PRESENT - screen - - -
 endseg
-seg 127.0 180.0 5 3 5
+seg 127.0 180.0 8 3 8
 op RENDER s6 - fbo0 - -
-op POST blm fbo0 fbo1 - -
-op POST vig fbo1 fbo2 - -
-op POST grn fbo2 screen - -
+op POST blm_bright fbo0 fbo1 - -
+op POST blm_blurh fbo1 fbo2 - -
+op POST blm_blurv fbo2 fbo1 - -
+op COMPOSITE blm_add fbo1 - fbo0 add
+op POST vig fbo0 fbo1 - -
+op POST grn fbo1 screen - -
 op PRESENT - screen - - -
 endseg
-seg 180.0 181.0 7 5 7
+seg 180.0 181.0 10 5 10
 op RENDER s6 - fbo0 - -
 op RENDER s7 - fbo1 - -
 op TRANSITION t6 fbo0,fbo1 fbo2 - -
-op POST blm fbo2 fbo3 - -
-op POST vig fbo3 fbo4 - -
-op POST grn fbo4 screen - -
+op POST blm_bright fbo2 fbo3 - -
+op POST blm_blurh fbo3 fbo4 - -
+op POST blm_blurv fbo4 fbo3 - -
+op COMPOSITE blm_add fbo3 - fbo2 add
+op POST vig fbo2 fbo3 - -
+op POST grn fbo3 screen - -
 op PRESENT - screen - - -
 endseg
-seg 181.0 211.0 5 3 5
+seg 181.0 211.0 8 3 8
 op RENDER s7 - fbo0 - -
-op POST blm fbo0 fbo1 - -
-op POST vig fbo1 fbo2 - -
-op POST grn fbo2 screen - -
+op POST blm_bright fbo0 fbo1 - -
+op POST blm_blurh fbo1 fbo2 - -
+op POST blm_blurv fbo2 fbo1 - -
+op COMPOSITE blm_add fbo1 - fbo0 add
+op POST vig fbo0 fbo1 - -
+op POST grn fbo1 screen - -
 op PRESENT - screen - - -
 endseg
 end
