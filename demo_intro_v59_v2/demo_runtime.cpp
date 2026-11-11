@@ -96,7 +96,7 @@ static HWND createWindow(int w, int h) {
     int x = (sw - cw) / 2, y = (sh - ch) / 2;
     if (x < 0) x = 0;
     if (y < 0) y = 0;
-    HWND hwnd = CreateWindowEx(exStyle, "DemoRT", "Demo Runtime v59v2v2", style,
+    HWND hwnd = CreateWindowEx(exStyle, "DemoRT", "Demo Runtime v58", style,
         x, y, cw, ch,
         nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
     if (hwnd) {
@@ -236,11 +236,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             g_fpsSum += g_fpsValue;
             g_fpsSamples++;
 
+            // Adaptive quality with hysteresis: switch to LOW when FPS < 28,
+            // back to HIGH when FPS > 35. Prevents oscillation.
+            if (g_fpsValue > 0) {
+                static bool s_lastQuality = true;
+                if (glx::g_qualityHigh && g_fpsValue < 28.0) {
+                    glx::g_qualityHigh = false;
+                    Log("[Quality] LOW (steps=24, FPS=%.1f)", g_fpsValue);
+                } else if (!glx::g_qualityHigh && g_fpsValue > 35.0) {
+                    glx::g_qualityHigh = true;
+                    Log("[Quality] HIGH (steps=40, FPS=%.1f)", g_fpsValue);
+                }
+            }
+
             // v53: заголовок только когда F1 on.
             if (g_showFPS) {
                 double avgSoFar = g_fpsSum / g_fpsSamples;
                 snprintf(g_titleBuf, sizeof(g_titleBuf),
-                    "Demo Runtime v59v2v2  |  %.1f FPS (min=%.1f max=%.1f avg=%.1f)  |  T=%.2fs  |  frames=%d  |  F1 toggle",
+                    "Demo Runtime v58  |  %.1f FPS (min=%.1f max=%.1f avg=%.1f)  |  T=%.2fs  |  frames=%d  |  F1 toggle",
                     g_fpsValue, g_fpsMin, g_fpsMax, avgSoFar, T, frameCount);
                 SetWindowTextA(g_hwnd, g_titleBuf);
             }
@@ -252,7 +265,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             if (g_showFPS != s_prevShowFPS) {
                 s_prevShowFPS = g_showFPS;
                 if (!g_showFPS) {
-                    SetWindowTextA(g_hwnd, "Demo Runtime v59v2v2  -  ESC quit, F1 toggle FPS");
+                    SetWindowTextA(g_hwnd, "Demo Runtime v58  -  ESC quit, F1 toggle FPS");
                 }
             }
         }
@@ -278,6 +291,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             Log("  sampled:     min=%.2f  max=%.2f  avg=%.2f  FPS", g_fpsMin, g_fpsMax, avgFPS);
             Log("  theoretical: %d frames / %.2fs = %.2f FPS", frameCount, finalT, theoreticalAvg);
             Log("  range:       %.1f FPS (max-min = %.1f)", g_fpsMax - g_fpsMin, g_fpsMax - g_fpsMin);
+            Log("  quality:     %s (nebula steps=%d)", glx::g_qualityHigh ? "HIGH" : "LOW", glx::g_qualityHigh ? 40 : 24);
         } else {
             Log("[Stats] No FPS samples collected (show ended too quickly).");
         }

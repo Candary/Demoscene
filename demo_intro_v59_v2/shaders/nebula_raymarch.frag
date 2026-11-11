@@ -58,7 +58,8 @@ const float PI  = 3.14159265359;
 const float TAU = 6.28318530718;
 
 // Volumetric raymarch parameters.
-const int   VOLUME_STEPS = 40;        // 40 шагов — компромисс quality/speed
+uniform int uVolumeSteps;             // adaptive: 40 default, 24 low quality (set by runtime)
+const int   MAX_VOLUME_STEPS = 40;    // GLSL 330: max bound for loop
 const float VOLUME_NEAR  = 1.0;       // начать raymarch с t=1
 const float VOLUME_FAR   = 20.0;      // заканчиваем на t=20
 const float DENSITY_SCALE = 0.6;      // масштаб плотности (visual)
@@ -133,10 +134,11 @@ vec4 volumetricMarch(vec3 ro, vec3 rd) {
 
     // OPTIMIZATION: Adaptive step size — larger steps in empty regions.
     // В плотных областях шаг нормальный (точность), в пустых — 2.5× (speed).
-    float baseStepSize = (VOLUME_FAR - VOLUME_NEAR) / float(VOLUME_STEPS);
+    float baseStepSize = (VOLUME_FAR - VOLUME_NEAR) / float(uVolumeSteps);
 
     float t = VOLUME_NEAR;
-    for (int i = 0; i < VOLUME_STEPS; i++) {
+    for (int i = 0; i < MAX_VOLUME_STEPS; i++) {
+        if (i >= uVolumeSteps) break;  // adaptive step count
         if (t >= VOLUME_FAR) break;
         vec3 p = ro + rd * t;
 

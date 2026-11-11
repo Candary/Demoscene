@@ -21,6 +21,10 @@
 
 namespace glx {
 
+// Adaptive quality: set by demo_runtime.cpp based on FPS.
+// HIGH: full raymarch steps (40). LOW: reduced steps (24) for stable 30+ FPS.
+inline bool g_qualityHigh = true;
+
 // ============================================================================
 // FBO Pool — manage framebuffer objects by name ("screen", "fbo0", "fbo1", ...)
 // ============================================================================
@@ -206,6 +210,10 @@ void setUniforms(const sm::Show& show, const sm::Clip& clip, double T, GLuint pr
     if (loc >= 0) glUniform1f(loc, (float)vars[sm::V_bar_phase]);
     loc = glGetUniformLocation(prog, "uEnergy");
     if (loc >= 0) glUniform1f(loc, (float)vars[sm::V_energy]);
+
+    // Adaptive quality: uVolumeSteps for nebula raymarch.
+    loc = glGetUniformLocation(prog, "uVolumeSteps");
+    if (loc >= 0) glUniform1i(loc, g_qualityHigh ? 40 : 24);
 
     // Clip opacity.
     float opacity = (float)safeRun(clip.opacity, vars);
