@@ -38,6 +38,31 @@ static double g_fpsMax     = 0.0;     // максимальный sampled FPS
 static double g_fpsSum     = 0.0;     // сумма всех sampled FPS (для avg)
 static int    g_fpsSamples = 0;       // количество sampled обновлений
 
+// v60: Per-scene FPS tracking.
+// Scenes defined by time ranges (from .smt segment boundaries).
+struct SceneStat {
+    const char* name;
+    double start, end;
+    double minFps, maxFps, sumFps;
+    int samples;
+};
+static SceneStat g_scenes[] = {
+    {"nebula",          0.0,  23.0,  999, 0, 0, 0},
+    {"transition_1",   23.0,  27.0,  999, 0, 0, 0},
+    {"sphere",         27.0,  48.0,  999, 0, 0, 0},
+    {"transition_2",   48.0,  52.0,  999, 0, 0, 0},
+    {"particle_swarm", 52.0,  73.0,  999, 0, 0, 0},
+    {"transition_3",   73.0,  77.0,  999, 0, 0, 0},
+    {"anxiety_mist",   77.0,  98.0,  999, 0, 0, 0},
+    {"transition_4",   98.0, 102.0,  999, 0, 0, 0},
+    {"morph_grid",    102.0, 123.0,  999, 0, 0, 0},
+    {"transition_5",  123.0, 127.0,  999, 0, 0, 0},
+    {"cozy_room",     127.0, 180.0,  999, 0, 0, 0},
+    {"transition_6",  180.0, 181.0,  999, 0, 0, 0},
+    {"morphing_figures",181.0,211.0,  999, 0, 0, 0},
+};
+static const int g_numScenes = sizeof(g_scenes) / sizeof(g_scenes[0]);
+
 static double getTime() {
     static LARGE_INTEGER freq = {0};
     static bool init = false;
@@ -336,6 +361,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             g_fpsSum += g_fpsValue;
             g_fpsSamples++;
 
+            // v60: Per-scene FPS tracking.
+            for (int i = 0; i < g_numScenes; i++) {
+                if (T >= g_scenes[i].start && T < g_scenes[i].end) {
+                    if (g_fpsValue < g_scenes[i].minFps) g_scenes[i].minFps = g_fpsValue;
+                    if (g_fpsValue > g_scenes[i].maxFps) g_scenes[i].maxFps = g_fpsValue;
+                    g_scenes[i].sumFps += g_fpsValue;
+                    g_scenes[i].samples++;
+                    break;
+                }
+            }
+
             // Adaptive quality with hysteresis: switch to LOW when FPS < 28,
             // back to HIGH when FPS > 35. Prevents oscillation.
             if (g_fpsValue > 0) {
@@ -392,6 +428,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             Log("  theoretical: %d frames / %.2fs = %.2f FPS", frameCount, finalT, theoreticalAvg);
             Log("  range:       %.1f FPS (max-min = %.1f)", g_fpsMax - g_fpsMin, g_fpsMax - g_fpsMin);
             Log("  quality:     %s (nebula steps=%d)", glx::g_qualityHigh ? "HIGH" : "LOW", glx::g_qualityHigh ? 40 : 24);
+            // v60: Per-scene FPS breakdown.
+            Log("  per-scene:");
+            for (int i = 0; i < g_numScenes; i++) {
+                if (g_scenes[i].samples > 0) {
+                    double avg = g_scenes[i].sumFps / g_scenes[i].samples;
+                    double dur = g_scenes[i].end - g_scenes[i].start;
+                    Log("    %-20s T=%5.0f-%5.0fs (%4.0fs)  min=%5.1f  max=%5.1f  avg=%5.1f  FPS  (%d samples)",
+                        g_scenes[i].name, g_scenes[i].start, g_scenes[i].end, dur,
+                        g_scenes[i].minFps, g_scenes[i].maxFps, avg, g_scenes[i].samples);
+                }
+            }
         } else {
             Log("[Stats] No FPS samples collected (show ended too quickly).");
         }
