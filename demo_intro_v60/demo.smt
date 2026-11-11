@@ -6,13 +6,13 @@ clip s1 10 scene nebula_raymarch 0.0 27.0 0.0 25.0 normal 11111 - - 0.0
 prog opacity 1 n:1.0
 prog progress 4 v:p n:0.0 n:1.0 f:clamp
 uni uPrimaryColor vec3 3
+prog 1 n:0.05
 prog 1 n:0.1
-prog 1 n:0.014595764705882358
-prog 1 n:0.012399686274509809
+prog 1 n:0.3
 uni uAccentColor vec3 3
-prog 1 n:0.1
-prog 1 n:0.0
-prog 1 n:0.0
+prog 1 n:0.2
+prog 1 n:0.6
+prog 1 n:0.9
 uni uIntensity float 1
 prog 1 n:0.8
 uni uMotionSpeed float 1
@@ -62,13 +62,13 @@ clip s4 10 scene anxiety_mist 73.0 102.0 75.0 25.0 normal 44444 - - 70.0
 prog opacity 1 n:1.0
 prog progress 4 v:p n:0.0 n:1.0 f:clamp
 uni uPrimaryColor vec3 3
+prog 1 n:0.25
+prog 1 n:0.05
 prog 1 n:0.1
-prog 1 n:0.014595764705882358
-prog 1 n:0.012399686274509809
 uni uAccentColor vec3 3
+prog 1 n:0.8
+prog 1 n:0.15
 prog 1 n:0.1
-prog 1 n:0.0
-prog 1 n:0.0
 uni uIntensity float 1
 prog 1 n:1.2
 uni uMotionSpeed float 1
