@@ -57,49 +57,72 @@ static void Log(const char* fmt, ...) {
 }
 
 // v60: Frame capture for visual regression testing.
-// Saves BMP at sample T values or on F2 press.
+// Saves JPEG-quality BMP at scene boundaries + 2s.
 static void captureFrame(const char* filename, int w, int h) {
     unsigned char* px = new unsigned char[w * h * 4];
     glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, px);
+    // Downscale to 640x360 for smaller files (half resolution).
+    int sw = w / 2, sh = h / 2;
+    unsigned char* small = new unsigned char[sw * sh * 3];
+    for (int y = 0; y < sh; y++) {
+        for (int x = 0; x < sw; x++) {
+            // Average 2x2 block
+            int r = 0, g = 0, b = 0;
+            for (int dy = 0; dy < 2; dy++) {
+                for (int dx = 0; dx < 2; dx++) {
+                    int idx = ((y * 2 + dy) * w + (x * 2 + dx)) * 4;
+                    r += px[idx]; g += px[idx + 1]; b += px[idx + 2];
+                }
+            }
+            int si = (y * sw + x) * 3;
+            small[si] = b / 4; small[si + 1] = g / 4; small[si + 2] = r / 4;
+        }
+    }
+    // Write BMP at half resolution
     FILE* f = fopen(filename, "wb");
-    if (!f) { delete[] px; return; }
-    int rowSize = ((w * 3 + 3) / 4) * 4;
-    int dataSize = rowSize * h;
+    if (!f) { delete[] px; delete[] small; return; }
+    int rowSize = ((sw * 3 + 3) / 4) * 4;
+    int dataSize = rowSize * sh;
     int fileSize = 54 + dataSize;
-    // BMP file header
     fputc('B', f); fputc('M', f);
     fwrite(&fileSize, 4, 1, f);
     int z = 0; fwrite(&z, 4, 1, f);
     int off = 54; fwrite(&off, 4, 1, f);
-    // BMP info header
     int h40 = 40; fwrite(&h40, 4, 1, f);
-    fwrite(&w, 4, 1, f);
-    fwrite(&h, 4, 1, f);
+    fwrite(&sw, 4, 1, f); fwrite(&sh, 4, 1, f);
     short s1 = 1; fwrite(&s1, 2, 1, f);
     short s24 = 24; fwrite(&s24, 2, 1, f);
-    fwrite(&z, 4, 1, f);
-    fwrite(&dataSize, 4, 1, f);
+    fwrite(&z, 4, 1, f); fwrite(&dataSize, 4, 1, f);
     int dpi = 2835; fwrite(&dpi, 4, 1, f); fwrite(&dpi, 4, 1, f);
     fwrite(&z, 4, 1, f); fwrite(&z, 4, 1, f);
-    // Pixel data (bottom-up, BGR)
-    for (int y = h - 1; y >= 0; y--) {
-        for (int x = 0; x < w; x++) {
-            int idx = (y * w + x) * 4;
-            fputc(px[idx + 2], f);  // B
-            fputc(px[idx + 1], f);  // G
-            fputc(px[idx + 0], f);  // R
+    for (int y = sh - 1; y >= 0; y--) {
+        for (int x = 0; x < sw; x++) {
+            int idx = (y * sw + x) * 3;
+            fputc(small[idx], f); fputc(small[idx + 1], f); fputc(small[idx + 2], f);
         }
-        for (int p = w * 3; p < rowSize; p++) fputc(0, f);
+        for (int p = sw * 3; p < rowSize; p++) fputc(0, f);
     }
     fclose(f);
-    delete[] px;
+    delete[] px; delete[] small;
 }
 
-// Auto-capture schedule
-static double g_captureTimes[] = {0.5, 25.0, 50.0, 75.0, 100.0, 125.0, 150.0, 180.0, 200.0};
+// Capture schedule: scene boundary + 2s after transition ends.
+// Scene transitions end at: T=27 (s1→s2), T=52 (s2→s3), T=77 (s3→s4),
+// T=102 (s4→s5), T=127 (s5→s6), T=181 (s6→s7).
+// Capture 2s after: T=29, 54, 79, 104, 129, 183.
+// Plus T=2 for initial scene.
+static double g_captureTimes[] = {2.0, 29.0, 54.0, 79.0, 104.0, 129.0, 183.0};
+static const char* g_captureNames[] = {
+    "shot_nebula.bmp",
+    "shot_sphere.bmp",
+    "shot_particles.bmp",
+    "shot_anxiety.bmp",
+    "shot_morph_grid.bmp",
+    "shot_cozy_room.bmp",
+    "shot_morphing_figures.bmp",
+};
 static int g_captureIdx = 0;
 static bool g_manualCapture = false;
-static double g_manualCaptureT = 0.0;
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
@@ -258,18 +281,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             break;
         }
 
-        // v60: Auto-capture frames for visual regression testing.
-        if (g_captureIdx < 9 && T >= g_captureTimes[g_captureIdx]) {
-            char fname[64];
-            snprintf(fname, sizeof(fname), "frame_T%03d.bmp", (int)g_captureTimes[g_captureIdx]);
-            captureFrame(fname, g_width, g_height);
-            Log("[Capture] Saved %s (%dx%d)", fname, g_width, g_height);
+        // v60: Auto-capture at scene boundaries + 2s.
+        if (g_captureIdx < 7 && T >= g_captureTimes[g_captureIdx]) {
+            captureFrame(g_captureNames[g_captureIdx], g_width, g_height);
+            Log("[Capture] Saved %s (%dx%d → 640x360)", g_captureNames[g_captureIdx], g_width, g_height);
             g_captureIdx++;
         }
         // v60: Manual capture on F2.
         if (g_manualCapture) {
             char fname[64];
-            snprintf(fname, sizeof(fname), "frame_manual_T%03d.bmp", (int)T);
+            snprintf(fname, sizeof(fname), "shot_manual_T%03d.bmp", (int)T);
             captureFrame(fname, g_width, g_height);
             Log("[Capture] Manual: %s at T=%.2f", fname, T);
             g_manualCapture = false;
