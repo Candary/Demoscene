@@ -56,11 +56,57 @@ static void Log(const char* fmt, ...) {
     if (s_log) fprintf(s_log, "%s\n", buf);
 }
 
+// v60: Frame capture for visual regression testing.
+// Saves BMP at sample T values or on F2 press.
+static void captureFrame(const char* filename, int w, int h) {
+    unsigned char* px = new unsigned char[w * h * 4];
+    glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, px);
+    FILE* f = fopen(filename, "wb");
+    if (!f) { delete[] px; return; }
+    int rowSize = ((w * 3 + 3) / 4) * 4;
+    int dataSize = rowSize * h;
+    int fileSize = 54 + dataSize;
+    // BMP file header
+    fputc('B', f); fputc('M', f);
+    fwrite(&fileSize, 4, 1, f);
+    int z = 0; fwrite(&z, 4, 1, f);
+    int off = 54; fwrite(&off, 4, 1, f);
+    // BMP info header
+    int h40 = 40; fwrite(&h40, 4, 1, f);
+    fwrite(&w, 4, 1, f);
+    fwrite(&h, 4, 1, f);
+    short s1 = 1; fwrite(&s1, 2, 1, f);
+    short s24 = 24; fwrite(&s24, 2, 1, f);
+    fwrite(&z, 4, 1, f);
+    fwrite(&dataSize, 4, 1, f);
+    int dpi = 2835; fwrite(&dpi, 4, 1, f); fwrite(&dpi, 4, 1, f);
+    fwrite(&z, 4, 1, f); fwrite(&z, 4, 1, f);
+    // Pixel data (bottom-up, BGR)
+    for (int y = h - 1; y >= 0; y--) {
+        for (int x = 0; x < w; x++) {
+            int idx = (y * w + x) * 4;
+            fputc(px[idx + 2], f);  // B
+            fputc(px[idx + 1], f);  // G
+            fputc(px[idx + 0], f);  // R
+        }
+        for (int p = w * 3; p < rowSize; p++) fputc(0, f);
+    }
+    fclose(f);
+    delete[] px;
+}
+
+// Auto-capture schedule
+static double g_captureTimes[] = {0.5, 25.0, 50.0, 75.0, 100.0, 125.0, 150.0, 180.0, 200.0};
+static int g_captureIdx = 0;
+static bool g_manualCapture = false;
+static double g_manualCaptureT = 0.0;
+
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
         case WM_KEYDOWN:
             if (wp == VK_ESCAPE) { g_running = false; PostQuitMessage(0); return 0; }
             if (wp == VK_F1)    { g_showFPS = !g_showFPS; return 0; }   // v53: toggle FPS
+            if (wp == VK_F2)    { g_manualCapture = true; g_manualCaptureT = 0; return 0; } // v60: capture
             break;
         case WM_CLOSE: g_running = false; PostQuitMessage(0); return 0;
         case WM_SIZE: g_width = LOWORD(lp); g_height = HIWORD(lp); return 0;
@@ -193,7 +239,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     double prevT = 0.0;   // для dt (расчёт FPS)
     MSG msg = {};
     Log("[Loop] Entering render loop, duration=%.1fs", show.duration);
-    Log("[Help] F1 = toggle FPS in window title (min/max/avg tracked always)");
+    Log("[Help] F1 = toggle FPS | F2 = capture frame | min/max/avg tracked always");
     while (g_running) {
         while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
             if (msg.message == WM_QUIT) { g_running = false; break; }
@@ -211,6 +257,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             g_running = false;
             break;
         }
+
+        // v60: Auto-capture frames for visual regression testing.
+        if (g_captureIdx < 9 && T >= g_captureTimes[g_captureIdx]) {
+            char fname[64];
+            snprintf(fname, sizeof(fname), "frame_T%03d.bmp", (int)g_captureTimes[g_captureIdx]);
+            captureFrame(fname, g_width, g_height);
+            Log("[Capture] Saved %s (%dx%d)", fname, g_width, g_height);
+            g_captureIdx++;
+        }
+        // v60: Manual capture on F2.
+        if (g_manualCapture) {
+            char fname[64];
+            snprintf(fname, sizeof(fname), "frame_manual_T%03d.bmp", (int)T);
+            captureFrame(fname, g_width, g_height);
+            Log("[Capture] Manual: %s at T=%.2f", fname, T);
+            g_manualCapture = false;
+        }
+
         SwapBuffers(g_hdc);
         frameCount++;
 
