@@ -387,7 +387,7 @@ def compile_show(show: dict, catalog: EffectCatalog, base_dir: str | Path | None
             progress = compile_expr("clamp(p,0,1)", BASE_VARS)
         track_id = ctx.clips_raw[inputs[0]]["track"] if inputs else c["track"]    # переход живёт на дорожке клипа A
         rc = RClip(cid, track_id, tracks[track_id], c["kind"], c["effect"], nom0, nom1, e0, e1, c.get("blend", "normal"),
-                   None, progress, _seed(seed, cid), inputs, {}, c.get("status", "accepted"), bool(c.get("locked", False)),
+                   None, progress, c.get("seed", _seed(seed, cid)), inputs, {}, c.get("status", "accepted"), bool(c.get("locked", False)),
                    max(0.0, e0 - float(meta.get("prewarm", 3.0))), order)
         if rc.blend not in BLENDS:
             ctx.err("E_BLEND", f"clips[{cid}].blend", f"blend: {BLENDS}")
@@ -502,6 +502,10 @@ def _compile_uniforms(ctx: _Ctx, rc: RClip, c: dict, ef: Effect, palettes: dict,
     defs, _categ = _atom_defs(ctx, cid, atoms)
     allowed = BASE_VARS | set(defs)
     mp = c.get("map") or {}
+    # v59-fix: handle clip-level arrays (e.g., uPrimitives for cozy_room_sdf)
+    clip_arrays = c.get("arrays") or {}
+    for arr_name, arr_values in clip_arrays.items():
+        rc.arrays[arr_name] = [float(x) for x in arr_values]
     for k in mp:
         if k in STANDARD_UNIFORMS:
             ctx.err("E_UNIFORM_RESERVED", f"clips[{cid}].map.{k}", f"{k} задаёт движок ({STANDARD_UNIFORMS[k]}); его нельзя назначить")

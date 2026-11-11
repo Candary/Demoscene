@@ -103,6 +103,11 @@ class AudioMap:
                 m.energy = np.asarray(d.get("energy", []), dtype=np.float64)
                 m.sections = d.get("sections", [])
                 m.duration = m.duration or d.get("duration")
+        # v59-fix: also accept energy/sections directly in audio dict (not from file)
+        if m.energy is None and "energy" in a:
+            m.energy = np.asarray(a["energy"], dtype=np.float64)
+        if not m.sections and "sections" in a:
+            m.sections = a["sections"]
         return m
 
 
