@@ -1,0 +1,33 @@
+Directed Timeline — пример, 6 минут — 6:00.4 (360.4 с), 128 BPM, 4/4
+Секции музыки: 0:00.4, 0:45.4/build, 1:00.4/drop, 2:15.3/breakdown, 3:00.3/build, 3:15.3/drop, 5:15.3/outro
+Маркеры: intro=0:00.4, build1=0:45.4, drop1=1:00.4, breakdown=2:15.4, build2=3:00.4, drop2=3:15.4, climax=4:45.4, outro=5:15.4, end=6:00.4
+
+Дорожка overlay (order 30):
+  5:44.4–6:00.4  такт 184.5–193.0  credits: overlay/credits
+
+Дорожка post (order 25):
+  0:00.0–6:00.4  такт 0.8–193.0  bloom: post/bloom
+  0:00.0–6:00.4  такт 0.8–193.0  grain: post/grain
+  0:00.0–6:00.4  такт 0.8–193.0  vignette: post/vignette
+  6:00.4–6:00.4  такт 193.0–193.0  finish: event/finish
+
+Дорожка main (order 10):
+  0:00.0–0:45.6  такт 0.8–25.1  intro: scene/anxiety_mist  (номинал 0:00.0–0:45.4, подводка)
+  0:45.1–1:00.6  такт 24.9–33.1  build1: scene/particle_swarm  (номинал 0:45.4–1:00.4, подводка)
+  0:45.1–0:45.6  такт 24.9–25.1  t_intro_build1: transition/flash  intro ⇒ build1
+  1:00.1–1:38.8  такт 32.9–53.5  drop1a: scene/nebula_raymarch  (номинал 1:00.4–1:37.9, подводка)
+  1:00.1–1:00.6  такт 32.9–33.1  t_build1_drop1a: transition/flash  build1 ⇒ drop1a
+  1:36.9–2:16.3  такт 52.5–73.5  drop1b: scene/morph_grid  (номинал 1:37.9–2:15.4, подводка)
+  1:36.9–1:38.8  такт 52.5–53.5  t_drop1a_drop1b: transition/crossfade  drop1a ⇒ drop1b
+  2:14.4–3:00.6  такт 72.5–97.1  room: scene/cozy_room_sdf  (номинал 2:15.4–3:00.4, подводка)
+  2:14.4–2:16.3  такт 72.5–73.5  t_drop1b_room: transition/crossfade  drop1b ⇒ room
+  3:00.1–3:15.6  такт 96.9–105.1  build2: scene/particle_swarm  (номинал 3:00.4–3:15.4, подводка)
+  3:00.1–3:00.6  такт 96.9–97.1  t_room_build2: transition/flash  room ⇒ build2
+  3:15.1–4:01.3  такт 104.9–129.5  drop2a: scene/nebula_raymarch  (номинал 3:15.4–4:00.4, подводка)
+  3:15.1–3:15.6  такт 104.9–105.1  t_build2_drop2a: transition/flash  build2 ⇒ drop2a
+  3:59.4–4:45.6  такт 128.5–153.1  drop2b: scene/morph_grid  (номинал 4:00.4–4:45.4, подводка)
+  3:59.4–4:01.3  такт 128.5–129.5  t_drop2a_drop2b: transition/crossfade  drop2a ⇒ drop2b
+  4:45.1–5:16.3  такт 152.9–169.5  climax: scene/sphere_scene  (номинал 4:45.4–5:15.4, подводка)
+  4:45.1–4:45.6  такт 152.9–153.1  t_drop2b_climax: transition/flash  drop2b ⇒ climax
+  5:14.4–6:00.4  такт 168.5–193.0  outro: scene/nebula_raymarch  (номинал 5:15.4–6:00.4, подводка)
+  5:14.4–5:16.3  такт 168.5–169.5  t_climax_outro: transition/crossfade  climax ⇒ outro

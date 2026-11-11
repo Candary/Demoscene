@@ -1,0 +1,1158 @@
+{
+ "format": "scene-manager/1",
+ "meta": {
+  "title": "Directed Timeline — пример, 6 минут",
+  "duration": "auto",
+  "resolution": [
+   1920,
+   1080
+  ],
+  "fps": 60,
+  "seed": 2026,
+  "prewarm": 3.0,
+  "budget": 14
+ },
+ "audio": {
+  "bpm": 128.0,
+  "offset": 0.352,
+  "beats_per_bar": 4,
+  "markers": [
+   {
+    "name": "intro",
+    "bar": 1,
+    "beat": 1
+   },
+   {
+    "name": "build1",
+    "bar": 25,
+    "beat": 1
+   },
+   {
+    "name": "drop1",
+    "bar": 33,
+    "beat": 1
+   },
+   {
+    "name": "breakdown",
+    "bar": 73,
+    "beat": 1
+   },
+   {
+    "name": "build2",
+    "bar": 97,
+    "beat": 1
+   },
+   {
+    "name": "drop2",
+    "bar": 105,
+    "beat": 1
+   },
+   {
+    "name": "climax",
+    "bar": 153,
+    "beat": 1
+   },
+   {
+    "name": "outro",
+    "bar": 169,
+    "beat": 1
+   },
+   {
+    "name": "end",
+    "bar": 193,
+    "beat": 1
+   }
+  ],
+  "file": "/home/z/my-project/scene_manager/examples/out/soundtrack.mp3",
+  "duration": 361.35,
+  "analysis": "soundtrack.analysis.json"
+ },
+ "palettes": {
+  "tense": {
+   "primary": "#7c7810",
+   "accent": "#7068b4",
+   "bg": "#040c14",
+   "text": "#dcece0",
+   "_source": {
+    "tool": "color_matrix",
+    "dataset_version": "prior-v11",
+    "feel": "tension",
+    "temperature": "warm",
+    "queries": [
+     "find_colors(feel)",
+     "build_palette(complementary)",
+     "find_colors(bg)",
+     "find_colors(text, min_contrast=7)"
+    ]
+   }
+  },
+  "euphoric": {
+   "primary": "#d88c8c",
+   "accent": "#51b6ba",
+   "bg": "#040c14",
+   "text": "#dcece0",
+   "_source": {
+    "tool": "color_matrix",
+    "dataset_version": "prior-v11",
+    "feel": "delight",
+    "temperature": null,
+    "queries": [
+     "find_colors(feel)",
+     "build_palette(complementary)",
+     "find_colors(bg)",
+     "find_colors(text, min_contrast=7)"
+    ]
+   }
+  },
+  "cozy": {
+   "primary": "#c88484",
+   "accent": "#51a9ad",
+   "bg": "#040c14",
+   "text": "#dcece0",
+   "_source": {
+    "tool": "color_matrix",
+    "dataset_version": "prior-v11",
+    "feel": "warmth",
+    "temperature": "warm",
+    "queries": [
+     "find_colors(feel)",
+     "build_palette(complementary)",
+     "find_colors(bg)",
+     "find_colors(text, min_contrast=7)"
+    ]
+   }
+  },
+  "calm": {
+   "primary": "#50cc28",
+   "accent": "#e578ff",
+   "bg": "#040c14",
+   "text": "#dcece0",
+   "_source": {
+    "tool": "color_matrix",
+    "dataset_version": "prior-v11",
+    "feel": "neutral",
+    "temperature": "cool",
+    "queries": [
+     "find_colors(feel)",
+     "build_palette(complementary)",
+     "find_colors(bg)",
+     "find_colors(text, min_contrast=7)"
+    ]
+   }
+  }
+ },
+ "looks": {
+  "tense": {
+   "atoms": {
+    "temperature": 3
+   },
+   "palette": "tense"
+  },
+  "euphoric": {
+   "atoms": {
+    "temperature": 2
+   },
+   "palette": "euphoric"
+  },
+  "cozy": {
+   "atoms": {
+    "temperature": 3
+   },
+   "palette": "cozy"
+  },
+  "calm": {
+   "atoms": {
+    "temperature": 1
+   },
+   "palette": "calm"
+  }
+ },
+ "tracks": [
+  {
+   "id": "main",
+   "order": 10
+  },
+  {
+   "id": "post",
+   "order": 25
+  },
+  {
+   "id": "overlay",
+   "order": 30
+  }
+ ],
+ "clips": [
+  {
+   "id": "intro",
+   "track": "main",
+   "kind": "scene",
+   "effect": "anxiety_mist",
+   "start": 0,
+   "end": {
+    "marker": "build1"
+   },
+   "look": "tense",
+   "atoms": {
+    "energy": {
+     "expr": "0.25 + 0.6 * audio.energy"
+    }
+   }
+  },
+  {
+   "id": "build1",
+   "track": "main",
+   "kind": "scene",
+   "effect": "particle_swarm",
+   "start": {
+    "marker": "build1"
+   },
+   "end": {
+    "marker": "drop1"
+   },
+   "look": "tense",
+   "atoms": {
+    "energy": {
+     "keys": [
+      [
+       0,
+       0.3
+      ],
+      [
+       15,
+       1.0,
+       "ease_in"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "drop1a",
+   "track": "main",
+   "kind": "scene",
+   "effect": "nebula_raymarch",
+   "start": {
+    "marker": "drop1"
+   },
+   "end": {
+    "marker": "drop1",
+    "offset_bars": 20
+   },
+   "look": "euphoric",
+   "atoms": {
+    "energy": {
+     "expr": "0.4 + 0.8 * audio.energy"
+    }
+   }
+  },
+  {
+   "id": "drop1b",
+   "track": "main",
+   "kind": "scene",
+   "effect": "morph_grid",
+   "start": {
+    "end_of": "drop1a"
+   },
+   "end": {
+    "marker": "breakdown"
+   },
+   "look": "euphoric",
+   "atoms": {
+    "energy": {
+     "expr": "0.3 + audio.energy"
+    }
+   }
+  },
+  {
+   "id": "room",
+   "track": "main",
+   "kind": "scene",
+   "effect": "cozy_room_sdf",
+   "start": {
+    "marker": "breakdown"
+   },
+   "end": {
+    "marker": "build2"
+   },
+   "look": "cozy",
+   "atoms": {
+    "energy": 0.3
+   },
+   "map": {
+    "uPrimitives": {
+     "asset": "living_room"
+    }
+   }
+  },
+  {
+   "id": "build2",
+   "track": "main",
+   "kind": "scene",
+   "effect": "particle_swarm",
+   "start": {
+    "marker": "build2"
+   },
+   "end": {
+    "marker": "drop2"
+   },
+   "look": "tense",
+   "atoms": {
+    "energy": {
+     "keys": [
+      [
+       0,
+       0.4
+      ],
+      [
+       15,
+       1.0,
+       "smoothstep"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "drop2a",
+   "track": "main",
+   "kind": "scene",
+   "effect": "nebula_raymarch",
+   "start": {
+    "marker": "drop2"
+   },
+   "end": {
+    "marker": "drop2",
+    "offset_bars": 24
+   },
+   "look": "euphoric",
+   "atoms": {
+    "energy": {
+     "expr": "0.5 + 0.8 * audio.energy"
+    }
+   }
+  },
+  {
+   "id": "drop2b",
+   "track": "main",
+   "kind": "scene",
+   "effect": "morph_grid",
+   "start": {
+    "end_of": "drop2a"
+   },
+   "end": {
+    "marker": "climax"
+   },
+   "look": "euphoric",
+   "atoms": {
+    "energy": {
+     "expr": "0.4 + audio.energy"
+    }
+   }
+  },
+  {
+   "id": "climax",
+   "track": "main",
+   "kind": "scene",
+   "effect": "sphere_scene",
+   "start": {
+    "marker": "climax"
+   },
+   "end": {
+    "marker": "outro"
+   },
+   "look": "euphoric",
+   "atoms": {
+    "energy": 1.0
+   }
+  },
+  {
+   "id": "outro",
+   "track": "main",
+   "kind": "scene",
+   "effect": "nebula_raymarch",
+   "start": {
+    "marker": "outro"
+   },
+   "end": {
+    "marker": "end"
+   },
+   "look": "calm",
+   "atoms": {
+    "energy": {
+     "keys": [
+      [
+       0,
+       0.6
+      ],
+      [
+       45,
+       0.1,
+       "smoothstep"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "t_intro_build1",
+   "kind": "transition",
+   "effect": "flash",
+   "between": [
+    "intro",
+    "build1"
+   ],
+   "duration": {
+    "beats": 1
+   },
+   "status": "accepted"
+  },
+  {
+   "id": "t_build1_drop1a",
+   "kind": "transition",
+   "effect": "flash",
+   "between": [
+    "build1",
+    "drop1a"
+   ],
+   "duration": {
+    "beats": 1
+   },
+   "status": "accepted"
+  },
+  {
+   "id": "t_drop1a_drop1b",
+   "kind": "transition",
+   "effect": "crossfade",
+   "between": [
+    "drop1a",
+    "drop1b"
+   ],
+   "duration": {
+    "beats": 4
+   },
+   "status": "accepted"
+  },
+  {
+   "id": "t_drop1b_room",
+   "kind": "transition",
+   "effect": "crossfade",
+   "between": [
+    "drop1b",
+    "room"
+   ],
+   "duration": {
+    "beats": 4
+   },
+   "status": "accepted"
+  },
+  {
+   "id": "t_room_build2",
+   "kind": "transition",
+   "effect": "flash",
+   "between": [
+    "room",
+    "build2"
+   ],
+   "duration": {
+    "beats": 1
+   },
+   "status": "accepted"
+  },
+  {
+   "id": "t_build2_drop2a",
+   "kind": "transition",
+   "effect": "flash",
+   "between": [
+    "build2",
+    "drop2a"
+   ],
+   "duration": {
+    "beats": 1
+   },
+   "status": "accepted"
+  },
+  {
+   "id": "t_drop2a_drop2b",
+   "kind": "transition",
+   "effect": "crossfade",
+   "between": [
+    "drop2a",
+    "drop2b"
+   ],
+   "duration": {
+    "beats": 4
+   },
+   "status": "accepted"
+  },
+  {
+   "id": "t_drop2b_climax",
+   "kind": "transition",
+   "effect": "flash",
+   "between": [
+    "drop2b",
+    "climax"
+   ],
+   "duration": {
+    "beats": 1
+   },
+   "status": "accepted"
+  },
+  {
+   "id": "t_climax_outro",
+   "kind": "transition",
+   "effect": "crossfade",
+   "between": [
+    "climax",
+    "outro"
+   ],
+   "duration": {
+    "beats": 4
+   },
+   "status": "accepted"
+  },
+  {
+   "id": "bloom",
+   "track": "post",
+   "kind": "post",
+   "effect": "bloom",
+   "start": 0,
+   "end": {
+    "marker": "end"
+   },
+   "map": {
+    "uIntensity": "0.4 + 0.6 * audio.energy"
+   }
+  },
+  {
+   "id": "grain",
+   "track": "post",
+   "kind": "post",
+   "effect": "grain",
+   "start": 0,
+   "end": {
+    "marker": "end"
+   }
+  },
+  {
+   "id": "vignette",
+   "track": "post",
+   "kind": "post",
+   "effect": "vignette",
+   "start": 0,
+   "end": {
+    "marker": "end"
+   }
+  },
+  {
+   "id": "credits",
+   "track": "overlay",
+   "kind": "overlay",
+   "effect": "credits",
+   "start": {
+    "marker": "end",
+    "offset": -16
+   },
+   "end": {
+    "marker": "end"
+   },
+   "palette": "calm"
+  },
+  {
+   "id": "finish",
+   "track": "post",
+   "kind": "event",
+   "effect": "finish",
+   "start": {
+    "marker": "end"
+   }
+  }
+ ],
+ "assets": {
+  "living_room": {
+   "layout": [
+    "shape",
+    "axis",
+    "sx",
+    "sy",
+    "sz",
+    "px",
+    "py",
+    "pz",
+    "rot_y_rad",
+    "r",
+    "g",
+    "b"
+   ],
+   "stride": 12,
+   "count": 46,
+   "floats": [
+    0.0,
+    1.0,
+    2.4,
+    0.02,
+    1.6,
+    0.0,
+    0.01,
+    -0.4,
+    0.0,
+    0.84706,
+    0.54902,
+    0.54902,
+    1.0,
+    1.0,
+    0.06,
+    0.1,
+    0.06,
+    -0.9,
+    0.05,
+    -2.08,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    1.0,
+    1.0,
+    0.06,
+    0.1,
+    0.06,
+    0.9,
+    0.05,
+    -2.08,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    1.0,
+    1.0,
+    0.06,
+    0.1,
+    0.06,
+    -0.9,
+    0.05,
+    -1.32,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    1.0,
+    1.0,
+    0.06,
+    0.1,
+    0.06,
+    0.9,
+    0.05,
+    -1.32,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    2.0,
+    0.3,
+    0.9,
+    0.0,
+    0.25,
+    -1.7,
+    0.0,
+    0.6902,
+    0.59608,
+    0.50196,
+    0.0,
+    1.0,
+    2.0,
+    0.45,
+    0.22,
+    0.0,
+    0.625,
+    -2.04,
+    0.0,
+    0.6902,
+    0.59608,
+    0.50196,
+    0.0,
+    1.0,
+    0.2,
+    0.25,
+    0.68,
+    -0.9,
+    0.525,
+    -1.59,
+    0.0,
+    0.6902,
+    0.59608,
+    0.50196,
+    0.0,
+    1.0,
+    0.2,
+    0.25,
+    0.68,
+    0.9,
+    0.525,
+    -1.59,
+    0.0,
+    0.6902,
+    0.59608,
+    0.50196,
+    0.0,
+    1.0,
+    0.8,
+    0.12,
+    0.66,
+    -0.4,
+    0.46,
+    -1.58,
+    0.0,
+    0.6902,
+    0.59608,
+    0.50196,
+    0.0,
+    1.0,
+    0.8,
+    0.12,
+    0.66,
+    0.4,
+    0.46,
+    -1.58,
+    0.0,
+    0.6902,
+    0.59608,
+    0.50196,
+    0.0,
+    1.0,
+    1.0,
+    0.04,
+    0.55,
+    0.0,
+    0.4,
+    -0.4,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    0.9,
+    0.02,
+    0.45,
+    0.0,
+    0.15,
+    -0.4,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    0.05,
+    0.38,
+    0.05,
+    -0.44,
+    0.19,
+    -0.62,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    0.05,
+    0.38,
+    0.05,
+    0.44,
+    0.19,
+    -0.62,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    0.05,
+    0.38,
+    0.05,
+    -0.44,
+    0.19,
+    -0.18,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    0.05,
+    0.38,
+    0.05,
+    0.44,
+    0.19,
+    -0.18,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    1.0,
+    1.0,
+    0.05,
+    0.12,
+    0.05,
+    -1.7355,
+    0.06,
+    -0.6518,
+    -1.13446,
+    0.65882,
+    0.37647,
+    0.14118,
+    1.0,
+    1.0,
+    0.05,
+    0.12,
+    0.05,
+    -1.4482,
+    0.06,
+    -0.0355,
+    -1.13446,
+    0.65882,
+    0.37647,
+    0.14118,
+    1.0,
+    1.0,
+    0.05,
+    0.12,
+    0.05,
+    -2.3518,
+    0.06,
+    -0.3645,
+    -1.13446,
+    0.65882,
+    0.37647,
+    0.14118,
+    1.0,
+    1.0,
+    0.05,
+    0.12,
+    0.05,
+    -2.0645,
+    0.06,
+    0.2518,
+    -1.13446,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    0.85,
+    0.28,
+    0.85,
+    -1.9,
+    0.26,
+    -0.2,
+    -1.13446,
+    0.6902,
+    0.59608,
+    0.50196,
+    0.0,
+    1.0,
+    0.85,
+    0.5,
+    0.2,
+    -1.6054,
+    0.65,
+    -0.3374,
+    -1.13446,
+    0.6902,
+    0.59608,
+    0.50196,
+    0.0,
+    1.0,
+    0.16,
+    0.22,
+    0.65,
+    -2.1364,
+    0.51,
+    -0.4704,
+    -1.13446,
+    0.6902,
+    0.59608,
+    0.50196,
+    0.0,
+    1.0,
+    0.16,
+    0.22,
+    0.65,
+    -1.8448,
+    0.51,
+    0.1549,
+    -1.13446,
+    0.6902,
+    0.59608,
+    0.50196,
+    0.0,
+    1.0,
+    0.53,
+    0.12,
+    0.62,
+    -1.9952,
+    0.46,
+    -0.1556,
+    -1.13446,
+    0.6902,
+    0.59608,
+    0.50196,
+    1.0,
+    1.0,
+    0.25,
+    0.03,
+    0.25,
+    1.9,
+    0.015,
+    -1.9,
+    0.0,
+    0.43137,
+    0.43137,
+    0.45098,
+    1.0,
+    1.0,
+    0.03,
+    1.2,
+    0.03,
+    1.9,
+    0.63,
+    -1.9,
+    0.0,
+    0.43137,
+    0.43137,
+    0.45098,
+    1.0,
+    1.0,
+    0.35,
+    0.3,
+    0.35,
+    1.9,
+    1.4,
+    -1.9,
+    0.0,
+    0.94118,
+    0.87843,
+    0.43922,
+    1.0,
+    1.0,
+    0.25,
+    0.22,
+    0.25,
+    2.1,
+    0.11,
+    1.2,
+    0.0,
+    0.91373,
+    0.89412,
+    0.8549,
+    1.0,
+    1.0,
+    0.03,
+    0.35,
+    0.03,
+    2.1,
+    0.395,
+    1.2,
+    0.0,
+    0.2902,
+    0.48627,
+    0.3098,
+    2.0,
+    1.0,
+    0.4,
+    0.5,
+    0.4,
+    2.1,
+    0.65,
+    1.2,
+    0.0,
+    0.2902,
+    0.48627,
+    0.3098,
+    0.0,
+    1.0,
+    0.03,
+    1.8,
+    0.3,
+    -2.435,
+    0.9,
+    -1.95,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    0.03,
+    1.8,
+    0.3,
+    -1.665,
+    0.9,
+    -1.95,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    0.8,
+    1.8,
+    0.01,
+    -2.05,
+    0.9,
+    -2.095,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    0.74,
+    0.03,
+    0.3,
+    -2.05,
+    0.015,
+    -1.95,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    0.74,
+    0.03,
+    0.3,
+    -2.05,
+    0.46,
+    -1.95,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    0.74,
+    0.03,
+    0.3,
+    -2.05,
+    0.91,
+    -1.95,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    0.74,
+    0.03,
+    0.3,
+    -2.05,
+    1.36,
+    -1.95,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    0.74,
+    0.03,
+    0.3,
+    -2.05,
+    1.785,
+    -1.95,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    0.45,
+    0.12,
+    0.45,
+    -0.6,
+    0.58,
+    -1.65,
+    0.0,
+    0.84706,
+    0.54902,
+    0.54902,
+    0.0,
+    1.0,
+    0.45,
+    0.12,
+    0.45,
+    0.6,
+    0.58,
+    -1.65,
+    0.34907,
+    0.84706,
+    0.54902,
+    0.54902,
+    1.0,
+    1.0,
+    0.14,
+    0.25,
+    0.14,
+    0.2,
+    0.545,
+    -0.4,
+    0.0,
+    0.91373,
+    0.89412,
+    0.8549,
+    1.0,
+    1.0,
+    0.3,
+    0.22,
+    0.3,
+    0.2,
+    0.78,
+    -0.4,
+    0.0,
+    0.94118,
+    0.87843,
+    0.43922,
+    0.0,
+    1.0,
+    0.6,
+    0.8,
+    0.03,
+    0.0,
+    1.8,
+    -2.2,
+    0.0,
+    0.65882,
+    0.37647,
+    0.14118,
+    0.0,
+    1.0,
+    0.52,
+    0.72,
+    0.01,
+    0.0,
+    1.8,
+    -2.18,
+    0.0,
+    0.93725,
+    0.91373,
+    0.86275
+   ],
+   "objects": [
+    "rug",
+    "sofa",
+    "coffee_table",
+    "armchair",
+    "lamp",
+    "plant",
+    "bookshelf",
+    "cushion",
+    "cushion",
+    "lamp_table",
+    "artwork"
+   ],
+   "source": "cozy_engine.primitives"
+  }
+ }
+}

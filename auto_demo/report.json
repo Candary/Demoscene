@@ -1,0 +1,112 @@
+{
+ "stats": {
+  "duration": 360.352,
+  "clips": 24,
+  "tracks": 3,
+  "effects_used": [
+   "anxiety_mist",
+   "bloom",
+   "cozy_room_sdf",
+   "credits",
+   "crossfade",
+   "finish",
+   "flash",
+   "grain",
+   "morph_grid",
+   "nebula_raymarch",
+   "particle_swarm",
+   "sphere_scene",
+   "vignette"
+  ],
+  "memory": {
+   "segments": 20,
+   "peak_fbos": 3,
+   "peak_at": [
+    45.117625,
+    45.586375
+   ],
+   "fbo_bytes_each": 16588800,
+   "peak_fbo_megabytes": 49.8,
+   "assumption": "1920x1080, 8 байт/пиксель (RGBA16F)",
+   "max_cost": 13
+  },
+  "errors": 0,
+  "proposed": 0
+ },
+ "lint": {
+  "duration": 360.352,
+  "errors": [],
+  "warnings": [],
+  "info": [
+   {
+    "level": "info",
+    "code": "I_SHADER_MISSING",
+    "path": "effects",
+    "message": "нет файлов шейдеров для эффектов: ['anxiety_mist', 'cozy_room_sdf', 'credits', 'morph_grid', 'morphing_figures', 'nebula_raymarch', 'particle_swarm', 'sphere_scene']"
+   }
+  ],
+  "ok": true
+ },
+ "transitions": [
+  [
+   "intro",
+   "build1",
+   "flash",
+   0.64
+  ],
+  [
+   "build1",
+   "drop1a",
+   "flash",
+   0.64
+  ],
+  [
+   "drop1a",
+   "drop1b",
+   "crossfade",
+   4.27
+  ],
+  [
+   "drop1b",
+   "room",
+   "crossfade",
+   4.27
+  ],
+  [
+   "room",
+   "build2",
+   "flash",
+   0.64
+  ],
+  [
+   "build2",
+   "drop2a",
+   "flash",
+   0.64
+  ],
+  [
+   "drop2a",
+   "drop2b",
+   "crossfade",
+   4.27
+  ],
+  [
+   "drop2b",
+   "climax",
+   "flash",
+   0.64
+  ],
+  [
+   "climax",
+   "outro",
+   "crossfade",
+   4.27
+  ]
+ ],
+ "audio": {
+  "bpm": 128.0,
+  "offset": 0.352,
+  "bpm_confidence": 1.0,
+  "downbeat_confidence": 1.426
+ }
+}
