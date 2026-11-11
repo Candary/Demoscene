@@ -129,7 +129,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         case WM_KEYDOWN:
             if (wp == VK_ESCAPE) { g_running = false; PostQuitMessage(0); return 0; }
             if (wp == VK_F1)    { g_showFPS = !g_showFPS; return 0; }   // v53: toggle FPS
-            if (wp == VK_F2)    { g_manualCapture = true; g_manualCaptureT = 0; return 0; } // v60: capture
+            if (wp == VK_F2)    { g_manualCapture = true; return 0; } // v60: capture
             break;
         case WM_CLOSE: g_running = false; PostQuitMessage(0); return 0;
         case WM_SIZE: g_width = LOWORD(lp); g_height = HIWORD(lp); return 0;
