@@ -297,6 +297,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         }
 
         SwapBuffers(g_hdc);
+
+        // v60: Frame limiter — cap at 60 FPS to prevent tearing and waste.
+        // vsync in windowed mode on Win11/NVIDIA doesn't always work strictly.
+        {
+            static double s_lastFrameTime = 0.0;
+            double now = getTime();
+            double frameElapsed = now - s_lastFrameTime;
+            double targetFrameTime = 1.0 / 60.0;  // 16.67 ms
+            if (frameElapsed < targetFrameTime) {
+                double sleepMs = (targetFrameTime - frameElapsed) * 1000.0;
+                if (sleepMs > 1.0) Sleep((DWORD)(sleepMs - 0.5));  // 0.5ms bias for Sleep overhead
+            }
+            s_lastFrameTime = getTime();
+        }
+
         frameCount++;
 
         // v53+v54: FPS calculation — накапливаем ВСЕГДА (для статистики),
