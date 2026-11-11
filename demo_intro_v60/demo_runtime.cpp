@@ -149,12 +149,108 @@ static const char* g_captureNames[] = {
 static int g_captureIdx = 0;
 static bool g_manualCapture = false;
 
+// v60: Recording (F3 toggle) — saves every frame as PNG for ffmpeg.
+static bool g_recording = false;
+static int g_recordFrame = 0;
+
+// Minimal PNG writer (no external library, ~50 lines).
+static void writePNG(const char* filename, int w, int h, const unsigned char* rgba) {
+    FILE* f = fopen(filename, "wb");
+    if (!f) return;
+    // PNG signature
+    static const unsigned char sig[] = {137,80,78,71,13,10,26,10};
+    fwrite(sig, 1, 8, f);
+    // IHDR chunk
+    unsigned char ihdr[13] = {0};
+    ihdr[0] = (w >> 24) & 0xFF; ihdr[1] = (w >> 16) & 0xFF;
+    ihdr[2] = (w >> 8) & 0xFF; ihdr[3] = w & 0xFF;
+    ihdr[4] = (h >> 24) & 0xFF; ihdr[5] = (h >> 16) & 0xFF;
+    ihdr[6] = (h >> 8) & 0xFF; ihdr[7] = h & 0xFF;
+    ihdr[8] = 8;  // bit depth
+    ihdr[9] = 6;  // color type: RGBA
+    // CRC and chunk writing
+    auto writeChunk = [&](const char* type, const unsigned char* data, int len) {
+        unsigned int clen = len;
+        fwrite(&clen, 4, 1, f);
+        fwrite(type, 1, 4, f);
+        fwrite(data, 1, len, f);
+        // CRC32
+        static unsigned int table[256];
+        static bool init = false;
+        if (!init) {
+            for (unsigned int i = 0; i < 256; i++) {
+                unsigned int c = i;
+                for (int k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >> 1)) : (c >> 1);
+                table[i] = c;
+            }
+            init = true;
+        }
+        unsigned int crc = 0xFFFFFFFF;
+        for (int i = 0; i < 4 + len; i++) {
+            unsigned char b = (i < 4) ? type[i] : data[i - 4];
+            crc = table[(crc ^ b) & 0xFF] ^ (crc >> 8);
+        }
+        crc ^= 0xFFFFFFFF;
+        fwrite(&crc, 4, 1, f);
+    };
+    writeChunk("IHDR", ihdr, 13);
+    // IDAT: raw pixel data with filter byte per row
+    // Use stored (no compression) — zlib header + raw deflate
+    int rowBytes = w * 4;
+    int rawLen = (rowBytes + 1) * h;  // +1 for filter byte per row
+    unsigned char* raw = new unsigned char[rawLen];
+    for (int y = 0; y < h; y++) {
+        raw[y * (rowBytes + 1)] = 0;  // filter: none
+        memcpy(raw + y * (rowBytes + 1) + 1, rgba + (h - 1 - y) * rowBytes, rowBytes);  // flip Y
+    }
+    // zlib wrapper: 2-byte header + raw deflate (stored blocks) + 4-byte adler32
+    int maxBlock = 65535;
+    int numBlocks = (rawLen + maxBlock - 1) / maxBlock;
+    int zlibLen = 2 + numBlocks * 5 + rawLen + 4;  // header + blocks + adler32
+    unsigned char* zlib = new unsigned char[zlibLen];
+    int zpos = 0;
+    zlib[zpos++] = 0x78; zlib[zpos++] = 0x01;  // zlib header (deflate, no compression)
+    int offset = 0;
+    while (offset < rawLen) {
+        int blockLen = (rawLen - offset < maxBlock) ? (rawLen - offset) : maxBlock;
+        bool last = (offset + blockLen >= rawLen);
+        zlib[zpos++] = last ? 0x01 : 0x00;  // BFINAL + BTYPE=00 (stored)
+        zlib[zpos++] = blockLen & 0xFF; zlib[zpos++] = (blockLen >> 8) & 0xFF;
+        int inv = ~blockLen;
+        zlib[zpos++] = inv & 0xFF; zlib[zpos++] = (inv >> 8) & 0xFF;
+        memcpy(zlib + zpos, raw + offset, blockLen);
+        zpos += blockLen;
+        offset += blockLen;
+    }
+    // Adler32
+    unsigned int a = 1, b = 0;
+    for (int i = 0; i < rawLen; i++) { a = (a + raw[i]) % 65521; b = (b + a) % 65521; }
+    unsigned int adler = (b << 16) | a;
+    zlib[zpos++] = (adler >> 24) & 0xFF; zlib[zpos++] = (adler >> 16) & 0xFF;
+    zlib[zpos++] = (adler >> 8) & 0xFF; zlib[zpos++] = adler & 0xFF;
+    writeChunk("IDAT", zlib, zpos);
+    writeChunk("IEND", nullptr, 0);
+    fclose(f);
+    delete[] raw; delete[] zlib;
+}
+
+static void captureFramePNG(const char* filename, int w, int h) {
+    unsigned char* px = new unsigned char[w * h * 4];
+    glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, px);
+    writePNG(filename, w, h, px);
+    delete[] px;
+}
+
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
         case WM_KEYDOWN:
             if (wp == VK_ESCAPE) { g_running = false; PostQuitMessage(0); return 0; }
             if (wp == VK_F1)    { g_showFPS = !g_showFPS; return 0; }   // v53: toggle FPS
-            if (wp == VK_F2)    { g_manualCapture = true; return 0; } // v60: capture
+            if (wp == VK_F2)    { g_manualCapture = true; return 0; } // v60: capture BMP
+            if (wp == VK_F3)    { g_recording = !g_recording;
+                                  if (g_recording) { Log("[Record] Started (frames → PNG)"); g_recordFrame = 0; }
+                                  else Log("[Record] Stopped (%d frames)", g_recordFrame);
+                                  return 0; } // v60: toggle recording
             break;
         case WM_CLOSE: g_running = false; PostQuitMessage(0); return 0;
         case WM_SIZE: g_width = LOWORD(lp); g_height = HIWORD(lp); return 0;
@@ -287,7 +383,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     double prevT = 0.0;   // для dt (расчёт FPS)
     MSG msg = {};
     Log("[Loop] Entering render loop, duration=%.1fs", show.duration);
-    Log("[Help] F1 = toggle FPS | F2 = capture frame | min/max/avg tracked always");
+    Log("[Help] F1 = toggle FPS | F2 = capture BMP | F3 = toggle recording | min/max/avg tracked always");
     while (g_running) {
         while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
             if (msg.message == WM_QUIT) { g_running = false; break; }
@@ -319,6 +415,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             captureFrame(fname, g_width, g_height);
             Log("[Capture] Manual: %s at T=%.2f", fname, T);
             g_manualCapture = false;
+        }
+        // v60: Recording — save every frame as PNG.
+        if (g_recording) {
+            char fname[64];
+            snprintf(fname, sizeof(fname), "rec_%05d.png", g_recordFrame);
+            captureFramePNG(fname, g_width, g_height);
+            g_recordFrame++;
         }
 
         SwapBuffers(g_hdc);
