@@ -1,0 +1,443 @@
+{
+  "format": "scene-manager/1",
+  "meta": {
+    "title": "v59-v2: v58 with Color Matrix + Cozy Engine",
+    "duration": 211,
+    "resolution": [
+      1280,
+      720
+    ],
+    "fps": 60,
+    "seed": 2026,
+    "prewarm": 3.0
+  },
+  "audio": {
+    "bpm": 128.0,
+    "offset": 0.0,
+    "beats_per_bar": 4,
+    "markers": []
+  },
+  "palettes": {
+    "p": {
+      "primary": "#000000",
+      "accent": "#ffffff"
+    }
+  },
+  "looks": {},
+  "tracks": [
+    {
+      "id": "main",
+      "order": 10
+    },
+    {
+      "id": "post",
+      "order": 25
+    },
+    {
+      "id": "evt",
+      "order": 30
+    }
+  ],
+  "clips": [
+    {
+      "id": "s1",
+      "track": "main",
+      "kind": "scene",
+      "effect": "nebula_raymarch",
+      "start": 0,
+      "duration": 25,
+      "palette": "p",
+      "map": {
+        "uPrimaryColor": [
+          0.9882352941176471,
+          0.23529411764705882,
+          0.2196078431372549
+        ],
+        "uAccentColor": [
+          0.8784313725490196,
+          0.03137254901960784,
+          0.047058823529411764
+        ],
+        "uIntensity": 0.8,
+        "uMotionSpeed": 1.0,
+        "uPulse": 0.0
+      }
+    },
+    {
+      "id": "s2",
+      "track": "main",
+      "kind": "scene",
+      "effect": "sphere_scene",
+      "start": 25,
+      "duration": 25,
+      "palette": "p",
+      "map": {
+        "uColor": [
+          0.6901960784313725,
+          0.596078431372549,
+          0.5019607843137255
+        ],
+        "uGlow": 1.2,
+        "uOrbit": 0.0
+      }
+    },
+    {
+      "id": "s3",
+      "track": "main",
+      "kind": "scene",
+      "effect": "particle_swarm",
+      "start": 50,
+      "duration": 25,
+      "palette": "p",
+      "map": {
+        "uColor": [
+          0.8470588235294118,
+          0.9882352941176471,
+          0.40784313725490196
+        ],
+        "uSwarm": 0.7,
+        "uBeatKick": 0.0
+      }
+    },
+    {
+      "id": "s4",
+      "track": "main",
+      "kind": "scene",
+      "effect": "anxiety_mist",
+      "start": 75,
+      "duration": 25,
+      "palette": "p",
+      "map": {
+        "uPrimaryColor": [
+          0.9882352941176471,
+          0.23529411764705882,
+          0.2196078431372549
+        ],
+        "uAccentColor": [
+          0.8784313725490196,
+          0.03137254901960784,
+          0.047058823529411764
+        ],
+        "uIntensity": 1.2,
+        "uMotionSpeed": 1.5,
+        "uWarmth": 0.85
+      }
+    },
+    {
+      "id": "s5",
+      "track": "main",
+      "kind": "scene",
+      "effect": "morph_grid",
+      "start": 100,
+      "duration": 25,
+      "palette": "p",
+      "map": {
+        "uColor": [
+          0.6901960784313725,
+          0.596078431372549,
+          0.5019607843137255
+        ],
+        "uMorph": 0.5,
+        "uSpeed": 1.0
+      }
+    },
+    {
+      "id": "s6",
+      "track": "main",
+      "kind": "scene",
+      "effect": "cozy_room_sdf",
+      "start": 125,
+      "duration": 55,
+      "palette": "p",
+      "map": {
+        "uLightColor": [
+          0.6901960784313725,
+          0.596078431372549,
+          0.5019607843137255
+        ],
+        "uCamAngle": 0.4
+      },
+      "arrays": {
+        "uPrimitives": [
+          0,
+          0,
+          5.0,
+          0.1,
+          5.0,
+          0.0,
+          -1.5,
+          0.0,
+          0.0,
+          0.8,
+          0.7,
+          0.5,
+          0,
+          0,
+          5.0,
+          3.0,
+          0.1,
+          0.0,
+          0.0,
+          -2.5,
+          0.0,
+          0.4,
+          0.3,
+          0.25,
+          0,
+          0,
+          0.1,
+          3.0,
+          5.0,
+          -2.5,
+          0.0,
+          0.0,
+          0.0,
+          0.5,
+          0.35,
+          0.25,
+          0,
+          0,
+          0.1,
+          3.0,
+          5.0,
+          2.5,
+          0.0,
+          0.0,
+          0.0,
+          0.5,
+          0.35,
+          0.25,
+          0,
+          0,
+          1.5,
+          0.1,
+          1.0,
+          0.0,
+          -0.5,
+          0.0,
+          0.0,
+          0.4,
+          0.25,
+          0.15,
+          1,
+          0,
+          0.2,
+          0.2,
+          0.2,
+          0.0,
+          0.1,
+          0.0,
+          0.0,
+          1.0,
+          0.85,
+          0.4,
+          2,
+          0,
+          0.08,
+          0.1,
+          0.08,
+          0.5,
+          -0.42,
+          0.3,
+          0.0,
+          0.9,
+          0.9,
+          0.95,
+          0,
+          0,
+          0.3,
+          0.05,
+          0.4,
+          -0.4,
+          -0.43,
+          0.2,
+          0.3,
+          0.7,
+          0.2,
+          0.2,
+          2,
+          0,
+          0.15,
+          0.25,
+          0.15,
+          -1.8,
+          -1.2,
+          1.5,
+          0.0,
+          0.55,
+          0.3,
+          0.2,
+          0,
+          0,
+          1.5,
+          1.5,
+          0.05,
+          2.4,
+          0.3,
+          -1.0,
+          0.0,
+          0.7,
+          0.85,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": "s7",
+      "track": "main",
+      "kind": "scene",
+      "effect": "morphing_figures",
+      "start": 181,
+      "duration": 30,
+      "palette": "p",
+      "map": {}
+    },
+    {
+      "id": "t1",
+      "track": "main",
+      "kind": "transition",
+      "effect": "crossfade",
+      "start": 23,
+      "duration": 4,
+      "between": [
+        "s1",
+        "s2"
+      ],
+      "palette": "p",
+      "map": {}
+    },
+    {
+      "id": "t2",
+      "track": "main",
+      "kind": "transition",
+      "effect": "flash",
+      "start": 48,
+      "duration": 4,
+      "between": [
+        "s2",
+        "s3"
+      ],
+      "palette": "p",
+      "map": {
+        "uColor": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "uPeak": 1.0
+      }
+    },
+    {
+      "id": "t3",
+      "track": "main",
+      "kind": "transition",
+      "effect": "crossfade",
+      "start": 73,
+      "duration": 4,
+      "between": [
+        "s3",
+        "s4"
+      ],
+      "palette": "p",
+      "map": {}
+    },
+    {
+      "id": "t4",
+      "track": "main",
+      "kind": "transition",
+      "effect": "flash",
+      "start": 98,
+      "duration": 4,
+      "between": [
+        "s4",
+        "s5"
+      ],
+      "palette": "p",
+      "map": {
+        "uColor": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "uPeak": 1.0
+      }
+    },
+    {
+      "id": "t5",
+      "track": "main",
+      "kind": "transition",
+      "effect": "crossfade",
+      "start": 123,
+      "duration": 4,
+      "between": [
+        "s5",
+        "s6"
+      ],
+      "palette": "p",
+      "map": {}
+    },
+    {
+      "id": "t6",
+      "track": "main",
+      "kind": "transition",
+      "effect": "crossfade",
+      "start": 180,
+      "duration": 1,
+      "between": [
+        "s6",
+        "s7"
+      ],
+      "palette": "p",
+      "map": {}
+    },
+    {
+      "id": "blm",
+      "track": "post",
+      "kind": "post",
+      "effect": "bloom",
+      "start": 0,
+      "duration": 211,
+      "palette": "p",
+      "map": {
+        "uThreshold": 0.6,
+        "uIntensity": 1.0,
+        "uRadius": 4.0
+      }
+    },
+    {
+      "id": "vig",
+      "track": "post",
+      "kind": "post",
+      "effect": "vignette",
+      "start": 0,
+      "duration": 211,
+      "palette": "p",
+      "map": {
+        "uStrength": 0.35,
+        "uSoftness": 0.5
+      }
+    },
+    {
+      "id": "grn",
+      "track": "post",
+      "kind": "post",
+      "effect": "grain",
+      "start": 0,
+      "duration": 211,
+      "palette": "p",
+      "map": {
+        "uAmount": 0.2
+      }
+    },
+    {
+      "id": "fin",
+      "track": "evt",
+      "kind": "event",
+      "effect": "finish",
+      "start": 211,
+      "duration": 0,
+      "palette": "p",
+      "map": {}
+    }
+  ]
+}
