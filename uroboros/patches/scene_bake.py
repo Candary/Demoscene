@@ -91,6 +91,9 @@ def apply(context, params):
     upstream = context.get("upstream", {})
     inputs = context.get("inputs", {})
 
+    # v60-vlm: color overrides from feedback loop (e.g., {"s1.uPrimaryColor": [0.05, 0.10, 0.30]})
+    color_overrides = params.get("color_overrides", {})
+
     # Extract palette from upstream (if available)
     palette_data = upstream.get("palette", {})
     palette = palette_data.get("palette", {})
@@ -109,6 +112,11 @@ def apply(context, params):
 
     # Use palette colors for direct-color scenes, v58 hardcoded for volumetric
     def get_color(scene_id, uniform_name, fallback):
+        # v60-vlm: check color_overrides first (from feedback loop)
+        override_key = f"{scene_id}.{uniform_name}"
+        if override_key in color_overrides:
+            return color_overrides[override_key]
+        # Then check v58 hardcoded (for volumetric scenes)
         if scene_id in V58_COLORS and uniform_name in V58_COLORS[scene_id]:
             return V58_COLORS[scene_id][uniform_name]
         # Try palette — handle both dict and list formats
@@ -154,7 +162,7 @@ def apply(context, params):
                "uIntensity": 1.2, "uMotionSpeed": 1.5, "uWarmth": 0.85},
         "s5": {"uColor": get_color("s5", "uColor", [0.30, 0.60, 0.90]),
                "uMorph": 0.5, "uSpeed": 1.0},
-        "s6": {"uLightColor": get_color("s6", "uPrimaryColor", [1.0, 0.85, 0.6]),
+        "s6": {"uLightColor": get_color("s6", "uLightColor", [1.0, 0.85, 0.6]),
                "uCamAngle": 0.15},
         "s7": {},
     }
