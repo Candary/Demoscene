@@ -1,0 +1,14 @@
+{
+  "format": "uroboros.patch/2",
+  "name": "cozy_room",
+  "nodes": [
+    {"id": "geometry", "target": "scene", "operation": "geometry.generate",
+     "params": {"width": 5.0, "depth": 4.0}},
+    {"id": "palette", "target": "color", "operation": "color.palette",
+     "params": {"mood": "quiet_warm"}},
+    {"id": "compose", "target": "scene", "operation": "scene.compose",
+     "needs": ["geometry", "palette"], "params": {}},
+    {"id": "cozy", "target": "scene", "operation": "cozy.plan_room",
+     "needs": ["compose"], "params": {"room": "living_room", "count": 6}}
+  ]
+}

@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uroboros"
+version = "0.3.0"
+description = "Patch-driven, file-backed iterative pipeline with human approval"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = []
+
+[project.optional-dependencies]
+glm = ["openai>=1.0"]
+test = ["pytest>=7"]
+
+[project.scripts]
+uroboros = "uroboros.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["uroboros*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,11 @@
+Что важно знать про этот проект Uroboros
+
+    Самодостаточен. Без Color Matrix / Cozy Engine / Scene Manager — работает, патчи возвращают fallback_hardcoded. Это видно в полях source / reason, а не тихо подменяется.
+
+    Интеграция через env vars. Если доустановить color_matrix_python (или положить в ./color_matrix_python/) и задать UROBOROS_COLOR_MATRIX_NPZ — патч color.palette начнёт отдавать source: "color_matrix" с реальными profiles и checks. Аналогично UROBOROS_COZY_MATRIX_NPZ для Cozy Engine.
+
+    Одобрение обязательно. Без --auto-approve и без GLM API — статус awaiting_approval, а не «молча применено».
+
+    Безопасность параллельных записей. В memory.py исправлена гонка tmp-файлов из исходного engine.py (uuid-суффиксы).
+
+    Что осталось за рамками. Color Matrix / Cozy Engine / Scene Manager — отдельные подсистемы, их внутренние баги (missing parse.py, adapters.py, audio.py и т.д.) этот проект не лечит. Он к ним подключается через adapters.py и переживает их отсутствие.
