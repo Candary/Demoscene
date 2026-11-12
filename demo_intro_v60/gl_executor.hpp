@@ -91,10 +91,21 @@ public:
 class ShaderCache {
     std::string shaderDir_;
     std::map<std::string, GLuint> programs_;
+    std::map<std::string, long long> fileTimes_;  // v60: hot-reload — last modification time
     GLuint vao_ = 0;
     GLuint vs_ = 0;  // shared vertex shader
 
     static const char* kVertSrc;
+
+    // v60: Get file modification time (Windows FILETIME as long long).
+    long long getFileTime(const std::string& path) {
+        WIN32_FIND_DATAA fd;
+        HANDLE h = FindFirstFileA(path.c_str(), &fd);
+        if (h == INVALID_HANDLE_VALUE) return 0;
+        long long t = ((long long)fd.ftLastWriteTime.dwHighDateTime << 32) | fd.ftLastWriteTime.dwLowDateTime;
+        FindClose(h);
+        return t;
+    }
 
     GLuint compileShader(GLenum type, const char* src) {
         GLuint sh = glCreateShader(type);
@@ -117,6 +128,53 @@ public:
         glGenVertexArrays(1, &vao_);
         // Shared vertex shader (fullscreen quad via gl_VertexID).
         vs_ = compileShader(GL_VERTEX_SHADER, kVertSrc);
+    }
+
+    // v60: Reload a single shader from disk (hot-reload).
+    bool reloadProgram(const std::string& effectId) {
+        std::string path = shaderDir_ + "/" + effectId + ".frag";
+        std::ifstream f(path);
+        if (!f) return false;
+        std::stringstream ss; ss << f.rdbuf();
+        std::string fragSrc = ss.str();
+
+        GLuint fs = compileShader(GL_FRAGMENT_SHADER, fragSrc.c_str());
+        if (!fs) return false;
+
+        GLuint prog = glCreateProgram();
+        glAttachShader(prog, vs_);
+        glAttachShader(prog, fs);
+        glLinkProgram(prog);
+        glDeleteShader(fs);
+        GLint ok; glGetProgramiv(prog, GL_LINK_STATUS, &ok);
+        if (!ok) {
+            char log[2048]; glGetProgramInfoLog(prog, sizeof(log), nullptr, log);
+            fprintf(stderr, "[GL executor] Hot-reload link error for %s: %s\n", effectId.c_str(), log);
+            glDeleteProgram(prog);
+            return false;
+        }
+        // Replace old program.
+        auto it = programs_.find(effectId);
+        if (it != programs_.end() && it->second) glDeleteProgram(it->second);
+        programs_[effectId] = prog;
+        fileTimes_[effectId] = getFileTime(path);
+        return true;
+    }
+
+    // v60: Check all shaders for file changes, reload if modified.
+    int checkReload() {
+        int reloaded = 0;
+        for (auto& kv : programs_) {
+            std::string path = shaderDir_ + "/" + kv.first + ".frag";
+            long long t = getFileTime(path);
+            long long prev = fileTimes_[kv.first];
+            if (prev > 0 && t > prev) {
+                if (reloadProgram(kv.first)) {
+                    reloaded++;
+                }
+            }
+        }
+        return reloaded;
     }
 
     GLuint getProgram(const std::string& effectId) {

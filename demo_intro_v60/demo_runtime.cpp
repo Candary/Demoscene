@@ -251,6 +251,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                                   if (g_recording) { Log("[Record] Started (frames → PNG)"); g_recordFrame = 0; }
                                   else Log("[Record] Stopped (%d frames)", g_recordFrame);
                                   return 0; } // v60: toggle recording
+            if (wp == VK_F4)    { int n = shaders.checkReload();
+                                  if (n > 0) Log("[HotReload] %d shader(s) recompiled", n);
+                                  else Log("[HotReload] No changes detected");
+                                  return 0; } // v60: hot-reload shaders
             break;
         case WM_CLOSE: g_running = false; PostQuitMessage(0); return 0;
         case WM_SIZE: g_width = LOWORD(lp); g_height = HIWORD(lp); return 0;
@@ -383,7 +387,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     double prevT = 0.0;   // для dt (расчёт FPS)
     MSG msg = {};
     Log("[Loop] Entering render loop, duration=%.1fs", show.duration);
-    Log("[Help] F1 = toggle FPS | F2 = capture BMP | F3 = toggle recording | min/max/avg tracked always");
+    Log("[Help] F1 = FPS | F2 = capture BMP | F3 = record PNG | F4 = hot-reload shaders");
     while (g_running) {
         while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
             if (msg.message == WM_QUIT) { g_running = false; break; }
