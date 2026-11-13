@@ -12,11 +12,27 @@ from .registry import PatchRegistry
 
 class Uroboros:
     def __init__(self, root=".uroboros", patches="patches",
-                 glm_propose: Callable | None = None, workers: int = 4):
+                 glm_propose: Callable | None = None, workers: int = 4,
+                 strict: bool = False):
+        """Initialize Uroboros engine.
+
+        Args:
+            root: memory root directory
+            patches: patches directory path
+            glm_propose: optional GLM-based feedback proposer
+            workers: parallel execution workers
+            strict: P1 — strict integration mode.
+                When True, patches that return outputs with `_fallback: True`
+                (i.e., a required subsystem was unavailable and was replaced
+                with hardcoded defaults) are marked as execution failures.
+                This prevents broken integrations from being silently masked
+                by fallback behavior. Default False (demo mode) for back-compat.
+        """
         self.memory = FileMemory(root)
         self.patches = PatchRegistry(patches)
         self.glm_propose = glm_propose
         self.workers = max(1, int(workers))
+        self.strict = strict
 
     # ---- фабрики патчей -----------------------------------------------------
     def make_patch(self, target: str, operation: str, inputs=None, params=None, **meta) -> dict:
@@ -40,10 +56,39 @@ class Uroboros:
     def _execute_one(self, patch: dict, context: dict, run_id: str):
         op = patch["operation"]
         input_hash = digest({"inputs": patch["inputs"], "upstream": context.get("upstream", {})})
+
+        # P1 fix: include external data file hashes in cache key.
+        # Patches may read external files (.npz matrices, .frag shaders, etc.)
+        # whose contents affect outputs but aren't captured in params/inputs.
+        # Without this, replacing a matrix file would still return stale cached
+        # results. Reported by external review 2026-11-12.
+        #
+        # Convention: patch params may declare `data_dependencies` as a list
+        # of file paths. Their mtime+size hashes are folded into the cache key.
+        data_deps_hash = ""
+        data_deps = patch["params"].get("data_dependencies") or []
+        if isinstance(data_deps, list) and data_deps:
+            import os as _os
+            dep_info = []
+            for path in data_deps:
+                try:
+                    st = _os.stat(path)
+                    # Use nanosecond precision mtime — int(st.st_mtime) would
+                    # miss changes within the same second (common in tests).
+                    dep_info.append({
+                        "path": path,
+                        "mtime_ns": st.st_mtime_ns,
+                        "size": st.st_size,
+                    })
+                except OSError:
+                    dep_info.append({"path": path, "missing": True})
+            data_deps_hash = digest({"data_dependencies": dep_info})
+
         key = digest({
             "target": patch["target"], "op": op,
             "script": self.patches.versions.get(op),
             "params": patch["params"], "input": input_hash,
+            "data_deps": data_deps_hash,   # P1: external data version
         })
         cached = self.memory.cache_get(key)
         if cached:
@@ -66,6 +111,21 @@ class Uroboros:
         patch["status"] = "executed"
         patch["metrics"] = {"cache_hit": False, "elapsed_ms": round(elapsed, 4)}
         patch["memory"]["cache_key"] = key
+
+        # P1 strict mode: if the patch reported a fallback (required subsystem
+        # unavailable, replaced with hardcoded defaults), mark as execution
+        # failure. Convention: outputs dict contains `_fallback: True` and
+        # `_fallback_reason: str` keys.
+        if self.strict and isinstance(outputs, dict) and outputs.get("_fallback") is True:
+            reason = outputs.get("_fallback_reason", "subsystem unavailable")
+            patch["status"] = "failed"
+            patch["metrics"]["fallback_reason"] = reason
+            patch["approval"] = "rejected"
+            raise PatchError(
+                f"{op} returned fallback in strict mode: {reason}. "
+                f"Either install the required subsystem or run with strict=False."
+            )
+
         self.memory.cache_put(key, {"outputs": outputs, "blob_refs": blob_refs, "operation": op})
         return patch, outputs
 
@@ -144,10 +204,30 @@ class Uroboros:
                 })
                 previous = result
 
+                # P0 fix: separate three states — execution, validation, approval.
+                # Auto-approval (require_approval=False) is now BLOCKED when any
+                # validate.* patch returned ok=False. The approval callback (if
+                # provided) still wins — user can override validation rejection
+                # explicitly, but silent auto-approval on failed validation is
+                # no longer possible.
+                #
+                # Note: validation_status="not_checked" (no validate patch ran)
+                # does NOT block auto-approval — only explicit validation
+                # failure does.
+                validation_failed = checklist.get("validation_status") == "failed"
+
                 if approval is not None:
                     accepted = bool(approval(result))
                 elif require_approval:
                     accepted = False
+                elif validation_failed:
+                    # Auto-approval forbidden when validation explicitly failed
+                    accepted = False
+                    self.memory.event({
+                        "type": "validation_blocked_approval", "run": run_id,
+                        "iteration": iteration,
+                        "problems": checklist.get("validation_problems", []),
+                    })
                 else:
                     accepted = True
 
@@ -164,11 +244,18 @@ class Uroboros:
                 )
                 self.memory.event({"type": "feedback", "run": run_id, "iteration": iteration, "proposal": proposal})
                 if not proposal:
-                    # If custom approval is provided, continue iterating without feedback.
-                    # The approval callback itself drives the iteration loop.
-                    if approval is not None:
-                        continue
-                    break
+                    # P0 fix: previously `break` here prevented the approval
+                    # callback from being called on subsequent iterations.
+                    # Now: only break if no approval callback is provided
+                    # (no point looping without feedback AND without an
+                    # approval callback that can change its mind). When an
+                    # approval callback IS provided, continue to next
+                    # iteration — the callback decides when to accept.
+                    if approval is None:
+                        break
+                    # else: continue to next iteration; approval callback
+                    # may accept on a later call.
+                    continue
                 if proposal.get("format") != FORMAT or proposal.get("operation") != "feedback.apply":
                     raise PatchError("Feedback must use the uroboros.patch/2 feedback.apply format")
                 changes = proposal.get("params", {}).get("changes", {})
@@ -202,12 +289,44 @@ class Uroboros:
     @staticmethod
     def _checklist(result: dict, iteration: int) -> dict:
         patches = result["patches"]
+        all_ops_succeeded = all(p["status"] in ("executed", "cache_hit") for p in patches)
+
+        # P0 fix: scan patch outputs for validation results.
+        # Convention: any patch with operation starting with "validate." or
+        # whose output contains an "ok" boolean is treated as a validator.
+        # If any validator returned ok=False, validation_status = "failed".
+        validation_problems: list[str] = []
+        validators_run: list[str] = []
+        for p in patches:
+            output = p.get("outputs") or {}
+            op = p.get("operation", "")
+            is_validator = (
+                op.startswith("validate.") or op.startswith("validate_")
+                or (isinstance(output, dict) and "ok" in output and "problems" in output)
+            )
+            if is_validator:
+                validators_run.append(p.get("id", op))
+                if isinstance(output, dict) and output.get("ok") is False:
+                    for prob in output.get("problems", []):
+                        validation_problems.append(f"[{p.get('id', op)}] {prob}")
+
+        if validators_run and not validation_problems:
+            validation_status = "passed"
+        elif validation_problems:
+            validation_status = "failed"
+        else:
+            validation_status = "not_checked"
+
         return {
             "iteration": iteration,
-            "all_operations_succeeded": all(p["status"] in ("executed", "cache_hit") for p in patches),
+            "all_operations_succeeded": all_ops_succeeded,
             "cache_hits": sum(p["status"] == "cache_hit" for p in patches),
             "execution_count": sum(p["status"] == "executed" for p in patches),
             "patch_ids": [p["id"] for p in patches],
             "approval_required": True,
+            # P0: explicit validation status, separate from execution status
+            "validation_status": validation_status,
+            "validators_run": validators_run,
+            "validation_problems": validation_problems,
             "notes": ["Record user rejection reasons and GLM corrections as feedback events in the next iteration."],
         }

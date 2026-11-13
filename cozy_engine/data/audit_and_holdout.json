@@ -1,0 +1,441 @@
+{
+ "audit": {
+  "scenes": 132358,
+  "atom_frames": {
+   "sofa": 11818,
+   "armchair": 5719,
+   "ottoman": 2685,
+   "bed": 14581,
+   "cushion": 10145,
+   "blanket": 6207,
+   "rug": 4865,
+   "curtain": 14628,
+   "table": 31817,
+   "coffee_table": 5656,
+   "chair": 48835,
+   "desk": 22211,
+   "bookshelf": 5136,
+   "shelf": 17654,
+   "cabinet": 21788,
+   "books": 12099,
+   "lamp": 8723,
+   "fireplace": 391,
+   "candle": 431,
+   "plant": 5685,
+   "window": 24043,
+   "door": 27303,
+   "artwork": 11118,
+   "mirror": 3561,
+   "basket": 2406,
+   "tv": 12290,
+   "computer": 12328,
+   "wood": 63149,
+   "fabric": 6979,
+   "leather": 3057,
+   "rattan": 526,
+   "glass": 7702,
+   "metal": 13676,
+   "stone": 4001,
+   "tile": 16620,
+   "brick": 513,
+   "carpet_floor": 36766,
+   "warm_light": 1535,
+   "natural_light": 13643,
+   "dim_light": 12178,
+   "soft_light": 1796,
+   "bright_light": 1604,
+   "warm_palette": 211,
+   "neutral_palette": 25602,
+   "earth_tones": 241,
+   "colorful": 7562,
+   "dark_palette": 1361,
+   "cluttered": 19315,
+   "tidy": 28646,
+   "minimal": 24354,
+   "spacious": 11247,
+   "soft": 3723,
+   "patterned": 16624,
+   "modern": 12816,
+   "rustic": 1217,
+   "small": 48004,
+   "living_room": 8507,
+   "bedroom": 6938,
+   "kitchen": 9175,
+   "bathroom": 15875,
+   "office": 40933,
+   "dining_room": 3488,
+   "hallway": 4722,
+   "laundry": 3184
+  },
+  "explicit_absent": {
+   "cushion": 21,
+   "blanket": 1,
+   "rug": 2,
+   "curtain": 8,
+   "table": 20,
+   "chair": 23,
+   "desk": 16,
+   "shelf": 4,
+   "cabinet": 5,
+   "books": 6,
+   "lamp": 3,
+   "plant": 4,
+   "window": 9,
+   "door": 2,
+   "artwork": 3,
+   "basket": 1,
+   "tv": 2,
+   "computer": 8,
+   "wood": 22,
+   "fabric": 2,
+   "glass": 2,
+   "metal": 6,
+   "tile": 2,
+   "brick": 2,
+   "carpet_floor": 26,
+   "natural_light": 1,
+   "bright_light": 1,
+   "neutral_palette": 17,
+   "colorful": 2,
+   "dark_palette": 1,
+   "cluttered": 6210,
+   "tidy": 9,
+   "spacious": 10,
+   "patterned": 10,
+   "modern": 1,
+   "small": 6,
+   "living_room": 1,
+   "bedroom": 1,
+   "bathroom": 1,
+   "office": 2
+  },
+  "rare_atoms(<0.15%)": [],
+  "frames_with_no_atoms": 229
+ },
+ "holdout": {
+  "n_frames": 132358,
+  "n_test_frames": 25194,
+  "n_test_scans": 324,
+  "positive_rate_test": 0.1474,
+  "split": "по сканам (crc32(scan_id) % 5 == 0 -> test)",
+  "auc_room_only": 0.8116,
+  "auc_all_atoms": 0.8979,
+  "single_color_feature_auc_(0.5=no signal)": {
+   "color_empathy_mean": {
+    "auc": 0.4343,
+    "n": 20571
+   },
+   "color_empathy_min": {
+    "auc": 0.4605,
+    "n": 20571
+   },
+   "color_intensity_mean": {
+    "auc": 0.5549,
+    "n": 20571
+   },
+   "color_intensity_max": {
+    "auc": 0.5122,
+    "n": 20571
+   },
+   "color_chroma_mean": {
+    "auc": 0.5666,
+    "n": 20571
+   },
+   "color_lightness_mean": {
+    "auc": 0.4637,
+    "n": 20571
+   },
+   "color_warm_fraction": {
+    "auc": 0.6108,
+    "n": 20571
+   },
+   "color_cold_fraction": {
+    "auc": 0.461,
+    "n": 20571
+   },
+   "color_tension_fraction": {
+    "auc": 0.5243,
+    "n": 20571
+   },
+   "color_positive_fraction": {
+    "auc": 0.4616,
+    "n": 20571
+   },
+   "color_n_colors": {
+    "auc": 0.4384,
+    "n": 20571
+   },
+   "color_dark_fraction": {
+    "auc": 0.4646,
+    "n": 20571
+   }
+  }
+ },
+ "color_agreement": {
+  "note": "AUC ~0.5 = связи нет; метка — слово cozy в подписи GPT-4o; цвета — прототипы названий -> Color Matrix prior",
+  "color_empathy_mean": {
+   "all": {
+    "auc": 0.476,
+    "n": 106183
+   },
+   "living_room": {
+    "auc": 0.489,
+    "n": 7524
+   },
+   "bedroom": {
+    "auc": 0.546,
+    "n": 5716
+   },
+   "office": {
+    "auc": 0.501,
+    "n": 31114
+   },
+   "bathroom": {
+    "auc": 0.507,
+    "n": 14462
+   }
+  },
+  "color_empathy_min": {
+   "all": {
+    "auc": 0.476,
+    "n": 106183
+   },
+   "living_room": {
+    "auc": 0.519,
+    "n": 7524
+   },
+   "bedroom": {
+    "auc": 0.535,
+    "n": 5716
+   },
+   "office": {
+    "auc": 0.477,
+    "n": 31114
+   },
+   "bathroom": {
+    "auc": 0.551,
+    "n": 14462
+   }
+  },
+  "color_intensity_mean": {
+   "all": {
+    "auc": 0.564,
+    "n": 106183
+   },
+   "living_room": {
+    "auc": 0.591,
+    "n": 7524
+   },
+   "bedroom": {
+    "auc": 0.565,
+    "n": 5716
+   },
+   "office": {
+    "auc": 0.557,
+    "n": 31114
+   },
+   "bathroom": {
+    "auc": 0.551,
+    "n": 14462
+   }
+  },
+  "color_intensity_max": {
+   "all": {
+    "auc": 0.542,
+    "n": 106183
+   },
+   "living_room": {
+    "auc": 0.543,
+    "n": 7524
+   },
+   "bedroom": {
+    "auc": 0.541,
+    "n": 5716
+   },
+   "office": {
+    "auc": 0.541,
+    "n": 31114
+   },
+   "bathroom": {
+    "auc": 0.484,
+    "n": 14462
+   }
+  },
+  "color_chroma_mean": {
+   "all": {
+    "auc": 0.582,
+    "n": 106183
+   },
+   "living_room": {
+    "auc": 0.561,
+    "n": 7524
+   },
+   "bedroom": {
+    "auc": 0.502,
+    "n": 5716
+   },
+   "office": {
+    "auc": 0.537,
+    "n": 31114
+   },
+   "bathroom": {
+    "auc": 0.505,
+    "n": 14462
+   }
+  },
+  "color_lightness_mean": {
+   "all": {
+    "auc": 0.493,
+    "n": 106183
+   },
+   "living_room": {
+    "auc": 0.486,
+    "n": 7524
+   },
+   "bedroom": {
+    "auc": 0.574,
+    "n": 5716
+   },
+   "office": {
+    "auc": 0.509,
+    "n": 31114
+   },
+   "bathroom": {
+    "auc": 0.52,
+    "n": 14462
+   }
+  },
+  "color_warm_fraction": {
+   "all": {
+    "auc": 0.612,
+    "n": 106183
+   },
+   "living_room": {
+    "auc": 0.589,
+    "n": 7524
+   },
+   "bedroom": {
+    "auc": 0.556,
+    "n": 5716
+   },
+   "office": {
+    "auc": 0.595,
+    "n": 31114
+   },
+   "bathroom": {
+    "auc": 0.502,
+    "n": 14462
+   }
+  },
+  "color_cold_fraction": {
+   "all": {
+    "auc": 0.49,
+    "n": 106183
+   },
+   "living_room": {
+    "auc": 0.502,
+    "n": 7524
+   },
+   "bedroom": {
+    "auc": 0.448,
+    "n": 5716
+   },
+   "office": {
+    "auc": 0.465,
+    "n": 31114
+   },
+   "bathroom": {
+    "auc": 0.491,
+    "n": 14462
+   }
+  },
+  "color_tension_fraction": {
+   "all": {
+    "auc": 0.517,
+    "n": 106183
+   },
+   "living_room": {
+    "auc": 0.486,
+    "n": 7524
+   },
+   "bedroom": {
+    "auc": 0.504,
+    "n": 5716
+   },
+   "office": {
+    "auc": 0.503,
+    "n": 31114
+   },
+   "bathroom": {
+    "auc": 0.508,
+    "n": 14462
+   }
+  },
+  "color_positive_fraction": {
+   "all": {
+    "auc": 0.492,
+    "n": 106183
+   },
+   "living_room": {
+    "auc": 0.511,
+    "n": 7524
+   },
+   "bedroom": {
+    "auc": 0.562,
+    "n": 5716
+   },
+   "office": {
+    "auc": 0.506,
+    "n": 31114
+   },
+   "bathroom": {
+    "auc": 0.534,
+    "n": 14462
+   }
+  },
+  "color_n_colors": {
+   "all": {
+    "auc": 0.469,
+    "n": 106183
+   },
+   "living_room": {
+    "auc": 0.449,
+    "n": 7524
+   },
+   "bedroom": {
+    "auc": 0.483,
+    "n": 5716
+   },
+   "office": {
+    "auc": 0.484,
+    "n": 31114
+   },
+   "bathroom": {
+    "auc": 0.41,
+    "n": 14462
+   }
+  },
+  "color_dark_fraction": {
+   "all": {
+    "auc": 0.452,
+    "n": 106183
+   },
+   "living_room": {
+    "auc": 0.485,
+    "n": 7524
+   },
+   "bedroom": {
+    "auc": 0.45,
+    "n": 5716
+   },
+   "office": {
+    "auc": 0.477,
+    "n": 31114
+   },
+   "bathroom": {
+    "auc": 0.508,
+    "n": 14462
+   }
+  }
+ }
+}

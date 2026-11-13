@@ -1,0 +1,376 @@
+# Markdown files index
+
+Project: /home/z/my-project
+Total .md files: 61
+
+| # | Path | Title | Summary | Size | Lines |
+|---|------|-------|---------|------|-------|
+| 1 | `color_matrix/policy/color_policy.md` | Политика работы с цветом | Ты умеешь подбирать и проверять цвета с помощью инструментов Color Matrix. Эта политика говорит, ... | 6823 B | 48 |
+| 2 | `color_matrix/policy/shader_color_policy.md` | Политика работы с цветом — shader context | Эта политика — адаптация основной `color_policy.md` для контекста **shader-арта и демо-сцен**. Зд... | 13622 B | 105 |
+| 3 | `cozy_engine/policy/cozy_policy.md` | Политика: уютная сцена (Cozy Engine + Color Matrix) | Эта политика дополняет `color_policy.md` (она остаётся в силе целиком). Здесь описано, **кто за ч... | 5894 B | 44 |
+| 4 | `download/aesthetics.md` | Aesthetic principles | **Документ:** aesthetics.md | 7795 B | 229 |
+| 5 | `download/changed_files/download/feat_scene_manager_variants.md` | Scene Manager — 5 архитектурных вариантов | **Документ:** feat_scene_manager_variants.md | 23537 B | 496 |
+| 6 | `download/changed_files/download/perf_analysis.md` | Performance Analysis — demo_intro + Color Matrix + Cozy Engine | **Документ:** perf_analysis.md | 36941 B | 713 |
+| 7 | `download/changed_files/README.md` | Changed Files — Bundle | **Generated:** 2026-11-07 | 3469 B | 51 |
+| 8 | `download/color_catalog.md` | Color Catalog — log по Tasks | **Назначение:** Последовательная запись цветов (#rrggbb) → synesthesias → empathies, используемых... | 2815 B | 71 |
+| 9 | `download/critique_response.md` | Ответ на критику проекта — детальный разбор | **Документ:** critique_response.md | 32494 B | 624 |
+| 10 | `download/critique_response_deepseek.md` | Ответ на критику DeepSeek — детальный разбор | **Документ:** critique_response_deepseek.md | 31567 B | 620 |
+| 11 | `download/demo_intro/README.md` | Demo Intro v2 — Морфящиеся 3D-фигуры с объёмными частицами | Красивое демо-интро на чистом C++ с OpenGL 3.3, без внешних библиотек. | 26052 B | 384 |
+| 12 | `download/demo_intro/roadmap.md` | ROADMAP — рабочая память проекта Demo Intro | **ПЕРЕЧИТЫВАТЬ ПРИ КАЖДОМ ЗАПРОСЕ!** Сохранять в `/home/z/my-project/roadmap.md` | 45984 B | 557 |
+| 13 | `download/doc_gen.md` | Documentation generation — diagnosis & optimization | **Документ:** doc_gen.md | 8932 B | 160 |
+| 14 | `download/feat_scene_manager.md` | Scene Manager — функционал для demoscene intro generation | **Документ:** feat_scene_manager.md | 24427 B | 682 |
+| 15 | `download/feat_scene_manager_variants.md` | Scene Manager — 5 архитектурных вариантов | **Документ:** feat_scene_manager_variants.md | 32707 B | 622 |
+| 16 | `download/perf_analysis.md` | Performance Analysis — demo_intro + Color Matrix + Cozy Engine | **Документ:** perf_analysis.md | 36941 B | 713 |
+| 17 | `download/Pipeline_intro.md` | Demoscene Compo Intro — Pipeline Analysis & Comparison | **Документ:** Pipeline_intro.md | 17091 B | 370 |
+| 18 | `download/README.md` | README | Here are all the generated files. | 34 B | 1 |
+| 19 | `download/reqs_killswitch.md` | Требования: Kill-switch для артефактов протокола | **Документ:** reqs_killswitch.md | 21152 B | 378 |
+| 20 | `download/scene_manager_new_response.md` | Разбор color_matrix_scene_new.zip — детальный анализ | **Документ:** scene_manager_new_response.md | 26082 B | 412 |
+| 21 | `download/smt_format_and_concept_review.md` | SMT format + Scene Manager concept — финальная оценка | **Документ:** smt_format_and_concept_review.md | 20463 B | 420 |
+| 22 | `download/smt_implementation_time_v2.md` | Scene Manager — реальный расчёт времени внедрения (v2) | **Документ:** smt_implementation_time_v2.md | 19768 B | 471 |
+| 23 | `download/snapshots/ROLLBACK_COLOR_MATRIX.md` | Rollback procedure — Color Matrix integration | **Created:** 2026-11-01 | 6000 B | 135 |
+| 24 | `download/sugg_pandoc_docx.md` | Migration risk analysis — Pandoc + content/*.md approach | **Документ:** sugg_pandoc_docx.md | 22448 B | 372 |
+| 25 | `download/uroboros_response.md` | Разбор Uroboros proposal — детальный анализ | **Документ:** uroboros_response.md | 24753 B | 450 |
+| 26 | `pandoc_docx/content/01_vvedenie_zachem_nuzhen.md` | 1. Введение --- зачем нужен этот язык | Эта документация описывает небольшой язык, который мы придумали, чтобы работать вместе быстрее и ... | 3203 B | 17 |
+| 27 | `pandoc_docx/content/02_osnovnye_idei_prostymi.md` | 2. Основные идеи простыми словами | Представьте, что мы обмениваемся записками. Обычно записка --- это просто предложение, которое на... | 3800 B | 21 |
+| 28 | `pandoc_docx/content/03_sigily_pyat_simvolov.md` | 3. Сигилы --- пять символов | Сигил --- это символ в самом начале строки. Он обозначает тип строки. Вот все пять: | 3844 B | 21 |
+| 29 | `pandoc_docx/content/04_komandy_deystviy_glagoly.md` | 4. Команды действий (!) --- глаголы | Сигил «!» говорит «сделай действие». Уточнить, какое именно, помогает глагол, который идёт сразу ... | 8581 B | 73 |
+| 30 | `pandoc_docx/content/05_tegi_sostoyaniya_avtotokeny.md` | 5. Теги состояния (@) --- автотокены | Сигил «@» обозначает сведения о состоянии: версия, контрольная сумма, статус, среда, наличие файл... | 3352 B | 21 |
+| 31 | `pandoc_docx/content/06_meta_auto_fayl.md` | 6. meta.auto --- файл автоподстановки | Чтобы автотокены работали, их правила где-то должны быть записаны. Для этого служит файл meta.aut... | 4225 B | 53 |
+| 32 | `pandoc_docx/content/07_btb_predzagruzka_po.md` | 7. BTB --- предзагрузка по памяти | BTB --- это моя внутренняя табличка-память. В ней записаны шаблоны (сигнатуры) ваших сообщений и ... | 9262 B | 109 |
+| 33 | `pandoc_docx/content/08_polnyy_sintaksis_zaprosa.md` | 8. Полный синтаксис запроса !feat (и !remove) | Глаголы !feat и !remove --- самые частые и самые богатые. !feat добавляет новую функцию, !remove ... | 6535 B | 71 |
+| 34 | `pandoc_docx/content/09_primery_ispol_zovaniya.md` | 9. Примеры использования | > ?почему вариадик-указатель ломает float ABI? | 3378 B | 63 |
+| 35 | `pandoc_docx/content/10_pravila_vzaimodeystviya.md` | 10. Правила взаимодействия | Поверх синтаксиса действуют три правила дисциплины обратной связи (записаны в журнале под номерам... | 4478 B | 29 |
+| 36 | `pandoc_docx/content/11_slovar_terminov.md` | 11. Словарь терминов | Все технические слова из этого документа и переписки --- в одном месте, с расшифровкой. | 9896 B | 91 |
+| 37 | `pandoc_docx/content/12_kratkaya_shpargalka.md` | 12. Краткая шпаргалка | Всё самое главное на одной странице --- для быстрого взгляда. | 3112 B | 67 |
+| 38 | `pandoc_docx/content/13_v2_reforms_summary.md` | 13. v2 reforms summary (Tasks 49-56) | Краткая сводка эволюции протокола с v1.3 → v1.4. Подробности --- в roadmap.md (Tasks 49-56). | 12861 B | 59 |
+| 39 | `pandoc_docx/content/14_code_booster_v1.md` | 14. Code booster v1.1 --- GLSL style statistics | Code booster --- это ngram-статистика GLSL/Cg стиля, вычисленная по реальному репозиторию (Demosc... | 13141 B | 149 |
+| 40 | `pandoc_docx/content/15_v1_5_changelog.md` | 15. v1.5 changelog --- что нового (Tasks 57-66) | Краткий список изменений v1.4 → v1.5: | 2884 B | 25 |
+| 41 | `pandoc_docx/content/16_auxiliary_documents_v1.md` | 16. Auxiliary documents (v1.6 --- auxiliary deliverables) | После v1.5 (Task 66 #milestone v49) создано 4 auxiliary документа в ходе &plan обсуждений и анали... | 8221 B | 101 |
+| 42 | `pandoc_docx/content/17_performance_optimization_applied.md` | 17. Performance optimization --- applied to this v1.6 generation | При генерации этого v1.6 документа applied optimization steps из doc_gen.md §3. Concrete measurem... | 3611 B | 51 |
+| 43 | `pandoc_docx/content/18_pandoc_migration_status.md` | 18. Pandoc migration --- status & proposal | В ходе v1.6 работы исследована возможность migration на Pandoc-based generation. Pandoc уже устан... | 3790 B | 67 |
+| 44 | `pandoc_docx/content/19_v1_6_changelog.md` | 19. v1.6 changelog --- что нового | Краткий список изменений v1.5 → v1.6: | 1890 B | 21 |
+| 45 | `pandoc_docx/content/20_pandoc.md` | 20. Pandoc pipeline — production accepted (v1.7) | **v1.7** — первая версия documentation, сгенерированная через Pandoc pipeline. Пользователь visua... | 6664 B | 146 |
+| 46 | `pandoc_docx/README.md` | Pandoc DOCX pipeline — test mode | **Location:** `/home/z/my-project/pandoc_docx/` | 6163 B | 218 |
+| 47 | `pandoc_docx/tests/test_report.md` | Test report — Pandoc pipeline v1.6 | **Date:** 2026-11-01 | 4312 B | 135 |
+| 48 | `pandoc_docx/tests/v17_workflow_plan.md` | v1.7 version bump workflow (Pandoc pipeline) | **Created:** 2026-11-01 | 4130 B | 157 |
+| 49 | `roadmap.md` | ROADMAP — рабочая память проекта Demo Intro | **ПЕРЕЧИТЫВАТЬ ПРИ КАЖДОМ ЗАПРОСЕ!** Сохранять в `/home/z/my-project/roadmap.md` | 45984 B | 557 |
+| 50 | `upload/color_matrix_scene_new/color_matrix_scene_new/scene manager/policy/scene_policy.md` | Политика: сборка демо через Scene Manager | Эта политика дополняет `color_policy.md` и `cozy_policy.md` (они остаются в силе). Здесь: как соб... | 7083 B | 37 |
+| 51 | `upload/color_matrix_scene_new/color_matrix_scene_new/scene manager/README.md` | Color Matrix v11 + Cozy Engine + Scene Manager — цвет, уют и монтаж демо для LLM (GLM) | > **Новое: Scene Manager** (Directed Timeline для демо без лимита размера, управляется GLM) описа... | 8855 B | 72 |
+| 52 | `upload/color_matrix_scene_new/color_matrix_scene_new/scene manager/SCENE_MANAGER.md` | Scene Manager для Demo без лимита: Directed Timeline, управляемый GLM | Задача: сделать Scene Manager, с которым GLM может собирать **неограниченное число разных демо** ... | 29162 B | 198 |
+| 53 | `upload/deepseek_markdown_20261107_5e2ac3.md` | Мнение по проекту «Unlimited demo» | Сильная инженерная работа — но не в том месте, где вы думаете. У вас редкое качество: вы **умеете... | 15020 B | 162 |
+| 54 | `upload/Qwen_markdown_20261107_kbzsi2fok.md` | Обсуждение: Scene Manager + Uroboros для Demo Intro | **Дата:** 7 ноября 2026 | 31809 B | 190 |
+| 55 | `upload/README.md` | Demo Intro v2 — Морфящиеся 3D-фигуры с объёмными частицами | Красивое демо-интро на чистом C++ с OpenGL 3.3, без внешних библиотек. | 24729 B | 372 |
+| 56 | `upload/SMT_FORMAT.md` | SMT — Scene Manager Text: формат запечённого показа (версия 1) | **SMT** — плоский текстовый формат, в который `bake` превращает готовый показ. Рантайм читает его... | 40364 B | 664 |
+| 57 | `upload/TZ_pandoc_migration.md` | ТЗ: перевод генерации DOCX на Markdown + Pandoc | Единственный источник контента — Markdown в `content/`. Документ собирается | 3719 B | 47 |
+| 58 | `upload/unlimited_demo_analysis.md` | Анализ проекта «Unlimited demo» | Посмотрел структуру репозитория (418 файлов, ~4.3 МБ кода). Проект амбициозный: C++ демо-интро + ... | 12941 B | 174 |
+| 59 | `upload/Рецензия на документацию sigil BTB.md` | Рецензия на документацию sigil+BTB | *Разбор документа «sigil\_btb\_documentation» (v1.3) · 30 октября 2026* | 14008 B | 97 |
+| 60 | `upload/Рецензия на документацию sigil+BTB.md` | Рецензия на документацию sigil+BTB | *Разбор документа «sigil\_btb\_documentation» (v1.3) · 30 октября 2026* | 14008 B | 97 |
+| 61 | `worklog.md` | Project Worklog | Task ID: 1-7 (summarized) | 58329 B | 718 |
+
+## Plain text list
+
+  1. color_matrix/policy/color_policy.md
+     Title: Политика работы с цветом
+     Summary: Ты умеешь подбирать и проверять цвета с помощью инструментов Color Matrix. Эта политика говорит, ...
+     Size: 6823 bytes, 48 lines
+
+  2. color_matrix/policy/shader_color_policy.md
+     Title: Политика работы с цветом — shader context
+     Summary: Эта политика — адаптация основной `color_policy.md` для контекста **shader-арта и демо-сцен**. Зд...
+     Size: 13622 bytes, 105 lines
+
+  3. cozy_engine/policy/cozy_policy.md
+     Title: Политика: уютная сцена (Cozy Engine + Color Matrix)
+     Summary: Эта политика дополняет `color_policy.md` (она остаётся в силе целиком). Здесь описано, **кто за ч...
+     Size: 5894 bytes, 44 lines
+
+  4. download/aesthetics.md
+     Title: Aesthetic principles
+     Summary: **Документ:** aesthetics.md
+     Size: 7795 bytes, 229 lines
+
+  5. download/changed_files/download/feat_scene_manager_variants.md
+     Title: Scene Manager — 5 архитектурных вариантов
+     Summary: **Документ:** feat_scene_manager_variants.md
+     Size: 23537 bytes, 496 lines
+
+  6. download/changed_files/download/perf_analysis.md
+     Title: Performance Analysis — demo_intro + Color Matrix + Cozy Engine
+     Summary: **Документ:** perf_analysis.md
+     Size: 36941 bytes, 713 lines
+
+  7. download/changed_files/README.md
+     Title: Changed Files — Bundle
+     Summary: **Generated:** 2026-11-07
+     Size: 3469 bytes, 51 lines
+
+  8. download/color_catalog.md
+     Title: Color Catalog — log по Tasks
+     Summary: **Назначение:** Последовательная запись цветов (#rrggbb) → synesthesias → empathies, используемых...
+     Size: 2815 bytes, 71 lines
+
+  9. download/critique_response.md
+     Title: Ответ на критику проекта — детальный разбор
+     Summary: **Документ:** critique_response.md
+     Size: 32494 bytes, 624 lines
+
+ 10. download/critique_response_deepseek.md
+     Title: Ответ на критику DeepSeek — детальный разбор
+     Summary: **Документ:** critique_response_deepseek.md
+     Size: 31567 bytes, 620 lines
+
+ 11. download/demo_intro/README.md
+     Title: Demo Intro v2 — Морфящиеся 3D-фигуры с объёмными частицами
+     Summary: Красивое демо-интро на чистом C++ с OpenGL 3.3, без внешних библиотек.
+     Size: 26052 bytes, 384 lines
+
+ 12. download/demo_intro/roadmap.md
+     Title: ROADMAP — рабочая память проекта Demo Intro
+     Summary: **ПЕРЕЧИТЫВАТЬ ПРИ КАЖДОМ ЗАПРОСЕ!** Сохранять в `/home/z/my-project/roadmap.md`
+     Size: 45984 bytes, 557 lines
+
+ 13. download/doc_gen.md
+     Title: Documentation generation — diagnosis & optimization
+     Summary: **Документ:** doc_gen.md
+     Size: 8932 bytes, 160 lines
+
+ 14. download/feat_scene_manager.md
+     Title: Scene Manager — функционал для demoscene intro generation
+     Summary: **Документ:** feat_scene_manager.md
+     Size: 24427 bytes, 682 lines
+
+ 15. download/feat_scene_manager_variants.md
+     Title: Scene Manager — 5 архитектурных вариантов
+     Summary: **Документ:** feat_scene_manager_variants.md
+     Size: 32707 bytes, 622 lines
+
+ 16. download/perf_analysis.md
+     Title: Performance Analysis — demo_intro + Color Matrix + Cozy Engine
+     Summary: **Документ:** perf_analysis.md
+     Size: 36941 bytes, 713 lines
+
+ 17. download/Pipeline_intro.md
+     Title: Demoscene Compo Intro — Pipeline Analysis & Comparison
+     Summary: **Документ:** Pipeline_intro.md
+     Size: 17091 bytes, 370 lines
+
+ 18. download/README.md
+     Title: README
+     Summary: Here are all the generated files.
+     Size: 34 bytes, 1 lines
+
+ 19. download/reqs_killswitch.md
+     Title: Требования: Kill-switch для артефактов протокола
+     Summary: **Документ:** reqs_killswitch.md
+     Size: 21152 bytes, 378 lines
+
+ 20. download/scene_manager_new_response.md
+     Title: Разбор color_matrix_scene_new.zip — детальный анализ
+     Summary: **Документ:** scene_manager_new_response.md
+     Size: 26082 bytes, 412 lines
+
+ 21. download/smt_format_and_concept_review.md
+     Title: SMT format + Scene Manager concept — финальная оценка
+     Summary: **Документ:** smt_format_and_concept_review.md
+     Size: 20463 bytes, 420 lines
+
+ 22. download/smt_implementation_time_v2.md
+     Title: Scene Manager — реальный расчёт времени внедрения (v2)
+     Summary: **Документ:** smt_implementation_time_v2.md
+     Size: 19768 bytes, 471 lines
+
+ 23. download/snapshots/ROLLBACK_COLOR_MATRIX.md
+     Title: Rollback procedure — Color Matrix integration
+     Summary: **Created:** 2026-11-01
+     Size: 6000 bytes, 135 lines
+
+ 24. download/sugg_pandoc_docx.md
+     Title: Migration risk analysis — Pandoc + content/*.md approach
+     Summary: **Документ:** sugg_pandoc_docx.md
+     Size: 22448 bytes, 372 lines
+
+ 25. download/uroboros_response.md
+     Title: Разбор Uroboros proposal — детальный анализ
+     Summary: **Документ:** uroboros_response.md
+     Size: 24753 bytes, 450 lines
+
+ 26. pandoc_docx/content/01_vvedenie_zachem_nuzhen.md
+     Title: 1. Введение --- зачем нужен этот язык
+     Summary: Эта документация описывает небольшой язык, который мы придумали, чтобы работать вместе быстрее и ...
+     Size: 3203 bytes, 17 lines
+
+ 27. pandoc_docx/content/02_osnovnye_idei_prostymi.md
+     Title: 2. Основные идеи простыми словами
+     Summary: Представьте, что мы обмениваемся записками. Обычно записка --- это просто предложение, которое на...
+     Size: 3800 bytes, 21 lines
+
+ 28. pandoc_docx/content/03_sigily_pyat_simvolov.md
+     Title: 3. Сигилы --- пять символов
+     Summary: Сигил --- это символ в самом начале строки. Он обозначает тип строки. Вот все пять:
+     Size: 3844 bytes, 21 lines
+
+ 29. pandoc_docx/content/04_komandy_deystviy_glagoly.md
+     Title: 4. Команды действий (!) --- глаголы
+     Summary: Сигил «!» говорит «сделай действие». Уточнить, какое именно, помогает глагол, который идёт сразу ...
+     Size: 8581 bytes, 73 lines
+
+ 30. pandoc_docx/content/05_tegi_sostoyaniya_avtotokeny.md
+     Title: 5. Теги состояния (@) --- автотокены
+     Summary: Сигил «@» обозначает сведения о состоянии: версия, контрольная сумма, статус, среда, наличие файл...
+     Size: 3352 bytes, 21 lines
+
+ 31. pandoc_docx/content/06_meta_auto_fayl.md
+     Title: 6. meta.auto --- файл автоподстановки
+     Summary: Чтобы автотокены работали, их правила где-то должны быть записаны. Для этого служит файл meta.aut...
+     Size: 4225 bytes, 53 lines
+
+ 32. pandoc_docx/content/07_btb_predzagruzka_po.md
+     Title: 7. BTB --- предзагрузка по памяти
+     Summary: BTB --- это моя внутренняя табличка-память. В ней записаны шаблоны (сигнатуры) ваших сообщений и ...
+     Size: 9262 bytes, 109 lines
+
+ 33. pandoc_docx/content/08_polnyy_sintaksis_zaprosa.md
+     Title: 8. Полный синтаксис запроса !feat (и !remove)
+     Summary: Глаголы !feat и !remove --- самые частые и самые богатые. !feat добавляет новую функцию, !remove ...
+     Size: 6535 bytes, 71 lines
+
+ 34. pandoc_docx/content/09_primery_ispol_zovaniya.md
+     Title: 9. Примеры использования
+     Summary: > ?почему вариадик-указатель ломает float ABI?
+     Size: 3378 bytes, 63 lines
+
+ 35. pandoc_docx/content/10_pravila_vzaimodeystviya.md
+     Title: 10. Правила взаимодействия
+     Summary: Поверх синтаксиса действуют три правила дисциплины обратной связи (записаны в журнале под номерам...
+     Size: 4478 bytes, 29 lines
+
+ 36. pandoc_docx/content/11_slovar_terminov.md
+     Title: 11. Словарь терминов
+     Summary: Все технические слова из этого документа и переписки --- в одном месте, с расшифровкой.
+     Size: 9896 bytes, 91 lines
+
+ 37. pandoc_docx/content/12_kratkaya_shpargalka.md
+     Title: 12. Краткая шпаргалка
+     Summary: Всё самое главное на одной странице --- для быстрого взгляда.
+     Size: 3112 bytes, 67 lines
+
+ 38. pandoc_docx/content/13_v2_reforms_summary.md
+     Title: 13. v2 reforms summary (Tasks 49-56)
+     Summary: Краткая сводка эволюции протокола с v1.3 → v1.4. Подробности --- в roadmap.md (Tasks 49-56).
+     Size: 12861 bytes, 59 lines
+
+ 39. pandoc_docx/content/14_code_booster_v1.md
+     Title: 14. Code booster v1.1 --- GLSL style statistics
+     Summary: Code booster --- это ngram-статистика GLSL/Cg стиля, вычисленная по реальному репозиторию (Demosc...
+     Size: 13141 bytes, 149 lines
+
+ 40. pandoc_docx/content/15_v1_5_changelog.md
+     Title: 15. v1.5 changelog --- что нового (Tasks 57-66)
+     Summary: Краткий список изменений v1.4 → v1.5:
+     Size: 2884 bytes, 25 lines
+
+ 41. pandoc_docx/content/16_auxiliary_documents_v1.md
+     Title: 16. Auxiliary documents (v1.6 --- auxiliary deliverables)
+     Summary: После v1.5 (Task 66 #milestone v49) создано 4 auxiliary документа в ходе &plan обсуждений и анали...
+     Size: 8221 bytes, 101 lines
+
+ 42. pandoc_docx/content/17_performance_optimization_applied.md
+     Title: 17. Performance optimization --- applied to this v1.6 generation
+     Summary: При генерации этого v1.6 документа applied optimization steps из doc_gen.md §3. Concrete measurem...
+     Size: 3611 bytes, 51 lines
+
+ 43. pandoc_docx/content/18_pandoc_migration_status.md
+     Title: 18. Pandoc migration --- status & proposal
+     Summary: В ходе v1.6 работы исследована возможность migration на Pandoc-based generation. Pandoc уже устан...
+     Size: 3790 bytes, 67 lines
+
+ 44. pandoc_docx/content/19_v1_6_changelog.md
+     Title: 19. v1.6 changelog --- что нового
+     Summary: Краткий список изменений v1.5 → v1.6:
+     Size: 1890 bytes, 21 lines
+
+ 45. pandoc_docx/content/20_pandoc.md
+     Title: 20. Pandoc pipeline — production accepted (v1.7)
+     Summary: **v1.7** — первая версия documentation, сгенерированная через Pandoc pipeline. Пользователь visua...
+     Size: 6664 bytes, 146 lines
+
+ 46. pandoc_docx/README.md
+     Title: Pandoc DOCX pipeline — test mode
+     Summary: **Location:** `/home/z/my-project/pandoc_docx/`
+     Size: 6163 bytes, 218 lines
+
+ 47. pandoc_docx/tests/test_report.md
+     Title: Test report — Pandoc pipeline v1.6
+     Summary: **Date:** 2026-11-01
+     Size: 4312 bytes, 135 lines
+
+ 48. pandoc_docx/tests/v17_workflow_plan.md
+     Title: v1.7 version bump workflow (Pandoc pipeline)
+     Summary: **Created:** 2026-11-01
+     Size: 4130 bytes, 157 lines
+
+ 49. roadmap.md
+     Title: ROADMAP — рабочая память проекта Demo Intro
+     Summary: **ПЕРЕЧИТЫВАТЬ ПРИ КАЖДОМ ЗАПРОСЕ!** Сохранять в `/home/z/my-project/roadmap.md`
+     Size: 45984 bytes, 557 lines
+
+ 50. upload/color_matrix_scene_new/color_matrix_scene_new/scene manager/policy/scene_policy.md
+     Title: Политика: сборка демо через Scene Manager
+     Summary: Эта политика дополняет `color_policy.md` и `cozy_policy.md` (они остаются в силе). Здесь: как соб...
+     Size: 7083 bytes, 37 lines
+
+ 51. upload/color_matrix_scene_new/color_matrix_scene_new/scene manager/README.md
+     Title: Color Matrix v11 + Cozy Engine + Scene Manager — цвет, уют и монтаж демо для LLM (GLM)
+     Summary: > **Новое: Scene Manager** (Directed Timeline для демо без лимита размера, управляется GLM) описа...
+     Size: 8855 bytes, 72 lines
+
+ 52. upload/color_matrix_scene_new/color_matrix_scene_new/scene manager/SCENE_MANAGER.md
+     Title: Scene Manager для Demo без лимита: Directed Timeline, управляемый GLM
+     Summary: Задача: сделать Scene Manager, с которым GLM может собирать **неограниченное число разных демо** ...
+     Size: 29162 bytes, 198 lines
+
+ 53. upload/deepseek_markdown_20261107_5e2ac3.md
+     Title: Мнение по проекту «Unlimited demo»
+     Summary: Сильная инженерная работа — но не в том месте, где вы думаете. У вас редкое качество: вы **умеете...
+     Size: 15020 bytes, 162 lines
+
+ 54. upload/Qwen_markdown_20261107_kbzsi2fok.md
+     Title: Обсуждение: Scene Manager + Uroboros для Demo Intro
+     Summary: **Дата:** 7 ноября 2026
+     Size: 31809 bytes, 190 lines
+
+ 55. upload/README.md
+     Title: Demo Intro v2 — Морфящиеся 3D-фигуры с объёмными частицами
+     Summary: Красивое демо-интро на чистом C++ с OpenGL 3.3, без внешних библиотек.
+     Size: 24729 bytes, 372 lines
+
+ 56. upload/SMT_FORMAT.md
+     Title: SMT — Scene Manager Text: формат запечённого показа (версия 1)
+     Summary: **SMT** — плоский текстовый формат, в который `bake` превращает готовый показ. Рантайм читает его...
+     Size: 40364 bytes, 664 lines
+
+ 57. upload/TZ_pandoc_migration.md
+     Title: ТЗ: перевод генерации DOCX на Markdown + Pandoc
+     Summary: Единственный источник контента — Markdown в `content/`. Документ собирается
+     Size: 3719 bytes, 47 lines
+
+ 58. upload/unlimited_demo_analysis.md
+     Title: Анализ проекта «Unlimited demo»
+     Summary: Посмотрел структуру репозитория (418 файлов, ~4.3 МБ кода). Проект амбициозный: C++ демо-интро + ...
+     Size: 12941 bytes, 174 lines
+
+ 59. upload/Рецензия на документацию sigil BTB.md
+     Title: Рецензия на документацию sigil+BTB
+     Summary: *Разбор документа «sigil\_btb\_documentation» (v1.3) · 30 октября 2026*
+     Size: 14008 bytes, 97 lines
+
+ 60. upload/Рецензия на документацию sigil+BTB.md
+     Title: Рецензия на документацию sigil+BTB
+     Summary: *Разбор документа «sigil\_btb\_documentation» (v1.3) · 30 октября 2026*
+     Size: 14008 bytes, 97 lines
+
+ 61. worklog.md
+     Title: Project Worklog
+     Summary: Task ID: 1-7 (summarized)
+     Size: 58329 bytes, 718 lines
+

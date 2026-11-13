@@ -1,0 +1,11 @@
+    prefix=/usr
+    exec_prefix=/usr
+    libdir=${exec_prefix}/lib/x86_64-linux-gnu
+    includedir=${prefix}/include
+    
+    Name: spirv
+    Description: SPIR-V is a binary intermediate language for representing graphical-shader stages and compute kernels for multiple Khronos APIs, including OpenCL, OpenGL, and Vulkan
+    Requires: glslang, SPIRV-Tools
+    Version: 1.5.5
+    Libs: -L${libdir}
+    Cflags: -I${includedir}

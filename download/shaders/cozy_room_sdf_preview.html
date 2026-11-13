@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>cozy_room_sdf.frag — preview</title>
+<style>
+  body { margin: 0; background: #000; overflow: hidden; font-family: monospace; }
+  canvas { display: block; width: 100vw; height: 100vh; image-rendering: auto; }
+  .hud { position: absolute; top: 8px; left: 8px; color: #6f6; font: 12px monospace;
+         background: rgba(0,0,0,0.85); padding: 8px 12px; border-radius: 4px; max-width: 95vw; white-space: pre-wrap; }
+  .hud.err { color: #f66; } .hud.ok { color: #6f6; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud" id="hud">init…</div>
+
+<script id="vs" type="x-shader/x-vertex">#version 300 es
+in vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+</script>
+
+<script id="fs" type="x-shader/x-fragment">#version 300 es
+precision highp float;
+precision highp int;
+out vec4 FragColor;
+uniform float uTime; uniform float uClipTime; uniform float uProgress;
+uniform float uGlobalTime; uniform vec2 uResolution; uniform int uSeed;
+uniform float uBeat; uniform float uBeatPhase; uniform float uBarPhase; uniform float uEnergy;
+uniform float uPrimitives[384];
+uniform int uPrimitivesCount;
+uniform vec3 uLightColor;
+uniform float uCamAngle;
+
+const float PI = 3.14159265359;
+const int MAX_PRIMS = 32;
+const int STRIDE = 12;
+
+float sdSphere(vec3 p, float r) { return length(p) - r; }
+float sdBox(vec3 p, vec3 b) {
+    vec3 q = abs(p) - b;
+    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+float sdCylinder(vec3 p, float r, float h) {
+    vec2 d = vec2(length(p.xz) - r, abs(p.y) - h);
+    return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
+}
+
+vec3 gHitColor;
+
+float mapScene(vec3 p) {
+    float minDist = 1e9;
+    gHitColor = vec3(0.5);
+    for (int i = 0; i < MAX_PRIMS; i++) {
+        if (i >= uPrimitivesCount) break;
+        int b = i * STRIDE;
+        float shape = uPrimitives[b + 0];
+        vec3 size = vec3(uPrimitives[b+2], uPrimitives[b+3], uPrimitives[b+4]);
+        vec3 pos = vec3(uPrimitives[b+5], uPrimitives[b+6], uPrimitives[b+7]);
+        float rotY = uPrimitives[b+8];
+        vec3 color = vec3(uPrimitives[b+9], uPrimitives[b+10], uPrimitives[b+11]);
+        vec3 lp = p - pos;
+        float c = cos(-rotY), s = sin(-rotY);
+        lp.xz = mat2(c, -s, s, c) * lp.xz;
+        float d;
+        if (shape < 0.5) { d = sdBox(lp, size * 0.5); }
+        else if (shape < 1.5) { d = sdSphere(lp, size.x); }
+        else { d = sdCylinder(lp, size.x, size.y * 0.5); }
+        if (d < minDist) { minDist = d; gHitColor = color; }
+    }
+    return minDist;
+}
+
+vec3 calcNormal(vec3 p) {
+    const vec2 k = vec2(1.0, -1.0); const float e = 0.001;
+    return normalize(
+        k.xyy * mapScene(p + k.xyy * e) +
+        k.yyx * mapScene(p + k.yyx * e) +
+        k.yxy * mapScene(p + k.yxy * e) +
+        k.xxx * mapScene(p + k.xxx * e));
+}
+
+vec2 rayMarch(vec3 ro, vec3 rd) {
+    vec3 oc = ro; float b = dot(oc, rd); float c = dot(oc, oc) - 64.0;
+    float disc = b * b - c; if (disc < 0.0) return vec2(-1.0, 0.0);
+    float t = max(0.0, -b - sqrt(disc));
+    const int STEPS = 48;
+    for (int i = 0; i < STEPS; i++) {
+        vec3 p = ro + rd * t; float d = mapScene(p);
+        if (d < 0.001) return vec2(t, 1.0);
+        if (t > 30.0) break; t += d;
+    }
+    return vec2(-1.0, 0.0);
+}
+
+vec3 backgroundColor(vec3 rd) {
+    float t = 0.5 + 0.5 * rd.y;
+    return mix(vec3(0.02, 0.02, 0.03), vec3(0.05, 0.06, 0.08), t);
+}
+vec3 aces(vec3 c) { return (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14); }
+
+void main() {
+    vec2 fragUv = gl_FragCoord.xy / uResolution;
+    vec2 uv = (fragUv * 2.0 - 1.0) * vec2(uResolution.x / uResolution.y, 1.0);
+    float a = uCamAngle; float dist = 6.0;
+    vec3 ro = vec3(sin(a) * dist, 2.5, cos(a) * dist);
+    vec3 ta = vec3(0.0, 1.0, 0.0);
+    vec3 fwd = normalize(ta - ro);
+    vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), fwd));
+    vec3 up = cross(fwd, right);
+    vec3 rd = normalize(fwd + uv.x * right + uv.y * up);
+    vec3 bg = backgroundColor(rd);
+    vec2 hit = rayMarch(ro, rd);
+    vec3 col;
+    if (hit.x < 0.0) { col = bg; }
+    else {
+        vec3 p = ro + rd * hit.x; vec3 n = calcNormal(p);
+        vec3 ld = normalize(vec3(0.3, 0.8, 0.5));
+        float diff = max(dot(n, ld), 0.0);
+        float amb = 0.2 + 0.15 * max(dot(n, vec3(0.0, 1.0, 0.0)), 0.0);
+        vec3 viewDir = -rd; vec3 halfDir = normalize(ld + viewDir);
+        float spec = pow(max(dot(n, halfDir), 0.0), 32.0);
+        vec3 surface = gHitColor * (amb + diff * 0.7) + uLightColor * spec * 0.4;
+        surface += uLightColor * 0.1 * diff;
+        float fog = 1.0 - exp(-hit.x * 0.06);
+        col = mix(surface, bg, fog * 0.4);
+    }
+    vec2 vd = fragUv - 0.5; col *= 1.0 - 0.25 * dot(vd, vd) * 2.0;
+    col = aces(col); col = pow(clamp(col, 0.0, 1.0), vec3(1.0 / 2.2));
+    FragColor = vec4(col, 1.0);
+}
+</script>
+
+<script>
+(function () {
+    const canvas = document.getElementById('c');
+    const hud = document.getElementById('hud');
+    const log = [];
+    function setHud(cls, msg) { hud.className = 'hud ' + cls; hud.textContent = msg; }
+    function push(msg) { log.push(msg); setHud('', log.join('\n')); }
+
+    // Build cozy room primitives: [shape, axis, sx, sy, sz, px, py, pz, rot_y, r, g, b]
+    // shape: 0=box, 1=sphere, 2=cylinder
+    const prims = [
+        // Floor
+        [0, 1, 8, 0.1, 8,  0, 0, 0,  0,  0.4, 0.3, 0.2],
+        // Back wall
+        [0, 1, 8, 4, 0.1,  0, 2, -4,  0,  0.6, 0.5, 0.4],
+        // Left wall
+        [0, 1, 0.1, 4, 8,  -4, 2, 0,  0,  0.5, 0.4, 0.3],
+        // Right wall
+        [0, 1, 0.1, 4, 8,   4, 2, 0,  0,  0.5, 0.4, 0.3],
+        // Sofa base
+        [0, 1, 3, 0.8, 1.2,  0, 0.4, -2.5,  0,  0.7, 0.4, 0.3],
+        // Sofa back
+        [0, 1, 3, 1.2, 0.3,  0, 1.0, -3.1,  0,  0.7, 0.4, 0.3],
+        // Coffee table top
+        [0, 1, 1.5, 0.1, 0.8,  0, 0.5, -0.5,  0,  0.3, 0.2, 0.1],
+        // Coffee table leg 1
+        [0, 1, 0.1, 0.5, 0.1, -0.6, 0.25, -0.1,  0,  0.2, 0.15, 0.1],
+        // Coffee table leg 2
+        [0, 1, 0.1, 0.5, 0.1,  0.6, 0.25, -0.1,  0,  0.2, 0.15, 0.1],
+        // Lamp sphere
+        [1, 1, 0.3, 0.3, 0.3,  2.5, 1.8, -3.0,  0,  1.0, 0.9, 0.5],
+        // Lamp pole
+        [2, 1, 0.05, 1.8, 0.05,  2.5, 0.9, -3.0,  0,  0.2, 0.2, 0.2],
+        // Rug
+        [0, 1, 3, 0.02, 2,  0, 0.06, 0,  0,  0.5, 0.2, 0.2],
+        // Bookshelf
+        [0, 1, 1.5, 3, 0.4,  -3.5, 1.5, -3.5,  0,  0.4, 0.25, 0.15],
+        // Plant pot
+        [2, 1, 0.3, 0.4, 0.3,  3.0, 0.2, 1.5,  0,  0.6, 0.4, 0.2],
+        // Plant leaves
+        [1, 1, 0.5, 0.5, 0.5,  3.0, 0.7, 1.5,  0,  0.2, 0.5, 0.2],
+        // Armchair
+        [0, 1, 1.2, 0.8, 1.0,  -2.5, 0.4, -1.5,  -1.0,  0.6, 0.35, 0.25],
+        // Window frame top
+        [0, 1, 1.5, 0.1, 0.1,  0, 3.0, -4.0,  0,  0.8, 0.8, 0.7],
+        // Window frame bottom
+        [0, 1, 1.5, 0.1, 0.1,  0, 1.2, -4.0,  0,  0.8, 0.8, 0.7],
+        // Window frame left
+        [0, 1, 0.1, 0.9, 0.1, -0.7, 2.1, -4.0,  0,  0.8, 0.8, 0.7],
+        // Window frame right
+        [0, 1, 0.1, 0.9, 0.1,  0.7, 2.1, -4.0,  0,  0.8, 0.8, 0.7],
+        // Ceiling light
+        [1, 1, 0.2, 0.2, 0.2,  0, 3.8, 0,  0,  1.0, 0.95, 0.7],
+    ];
+    const primCount = prims.length;
+    const primFlat = new Float32Array(384);
+    for (let i = 0; i < primCount; i++)
+        for (let j = 0; j < 12; j++)
+            primFlat[i * 12 + j] = prims[i][j];
+
+    try {
+        push('step 1: get webgl2 context…');
+        const gl = canvas.getContext('webgl2', { antialias: false, premultipliedAlpha: false });
+        if (!gl) { setHud('err', 'ERROR: WebGL2 не поддерживается.'); return; }
+        push('step 2: ' + gl.getParameter(gl.VERSION));
+
+        let lastErr = '';
+        function compile(type, src, name) {
+            const sh = gl.createShader(type); gl.shaderSource(sh, src.trim()); gl.compileShader(sh);
+            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) { lastErr = gl.getShaderInfoLog(sh) || '(empty)'; return null; }
+            return sh;
+        }
+        const vs = compile(gl.VERTEX_SHADER, document.getElementById('vs').textContent, 'vertex');
+        if (!vs) { setHud('err', 'VERTEX FAIL:\n' + lastErr); return; }
+        const fs = compile(gl.FRAGMENT_SHADER, document.getElementById('fs').textContent, 'fragment');
+        if (!fs) { setHud('err', 'FRAGMENT FAIL:\n' + lastErr); return; }
+        const prog = gl.createProgram(); gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { setHud('err', 'LINK FAIL:\n' + gl.getProgramInfoLog(prog)); return; }
+        gl.useProgram(prog); push('step 3: linked OK (' + primCount + ' primitives)');
+
+        const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+        const aPos = gl.getAttribLocation(prog, 'aPos');
+        gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+        const U = {};
+        ['uTime','uClipTime','uProgress','uGlobalTime','uResolution','uSeed',
+         'uBeat','uBeatPhase','uBarPhase','uEnergy','uPrimitives','uPrimitivesCount',
+         'uLightColor','uCamAngle']
+            .forEach(n => U[n] = gl.getUniformLocation(prog, n));
+
+        let halfRes = true;
+        function resize() {
+            const s = halfRes ? 0.5 : 1.0;
+            canvas.width = Math.floor(window.innerWidth * s);
+            canvas.height = Math.floor(window.innerHeight * s);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        window.addEventListener('keydown', e => { if (e.key === 'q' || e.key === 'Q') { halfRes = !halfRes; resize(); } });
+        resize();
+
+        const start = performance.now(); let lastT = 0, fc = 0, fps = 0;
+        function frame() {
+            try {
+                const T = (performance.now() - start) / 1000;
+                const dt = lastT > 0 ? (T - lastT) : 0.016; lastT = T;
+                const inst = 1.0 / dt; fps = fps > 0 ? fps * 0.9 + inst * 0.1 : inst;
+                const beat = T * 2.0, bp = beat - Math.floor(beat);
+                const camAngle = 0.8 * Math.sin(T * 0.1);
+
+                gl.uniform1f(U.uTime, T); gl.uniform1f(U.uClipTime, T);
+                gl.uniform1f(U.uProgress, 1); gl.uniform1f(U.uGlobalTime, T);
+                gl.uniform2f(U.uResolution, canvas.width, canvas.height);
+                gl.uniform1i(U.uSeed, 2026); gl.uniform1f(U.uBeat, beat);
+                gl.uniform1f(U.uBeatPhase, bp); gl.uniform1f(U.uBarPhase, (beat/4)-Math.floor(beat/4));
+                gl.uniform1f(U.uEnergy, 0.3);
+                gl.uniform1fv(U.uPrimitives, primFlat);
+                gl.uniform1i(U.uPrimitivesCount, primCount);
+                gl.uniform3f(U.uLightColor, 1.0, 0.9, 0.6);
+                gl.uniform1f(U.uCamAngle, camAngle);
+
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                if (fc === 0) { const e = gl.getError(); if (e !== gl.NO_ERROR) { setHud('err', 'GL ERROR: 0x'+e.toString(16)); return; } }
+                fc++;
+                if (fc === 1) setHud('ok', '✅ first frame rendered');
+                else if (fc % 5 === 0) {
+                    const rm = halfRes ? 'half' : 'full';
+                    setHud('ok', '✅ cozy_room_sdf  |  T=' + T.toFixed(1) + 's  |  prims=' + primCount +
+                           '  |  cam=' + camAngle.toFixed(2) + '  |  FPS=' + fps.toFixed(0) +
+                           '  |  ' + rm + ' ' + canvas.width + 'x' + canvas.height + '  |  Q: toggle');
+                }
+            } catch (e) { setHud('err', 'FRAME ERROR: ' + (e.message||e)); console.error(e); return; }
+            requestAnimationFrame(frame);
+        }
+        push('step 4: starting render loop (' + primCount + ' prims, 48 steps, cost=4)…');
+        frame();
+    } catch (e) {
+        setHud('err', 'EXCEPTION: ' + (e.message||e) + (lastErr ? '\nShader: '+lastErr : '') + '\nLog:\n'+log.join('\n'));
+        console.error(e);
+    }
+})();
+</script>
+</body>
+</html>

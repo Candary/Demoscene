@@ -1,0 +1,11 @@
+title: "Документация языка sigil+BTB"
+subtitle: "Протокол общения между пользователем и ИИ-ассистентом"
+author: "Документ — технический мануал"
+date: "1 ноября 2026"
+abstract: |
+  Аудитория: начинающий программист.
+  Версия документа: v1.7 (Pandoc pipeline production-accepted; first pandoc-generated version; §20 Pandoc pipeline documentation added)
+version: "1.7"
+lang: ru-RU
+toc-title: "Оглавление"
+abstract-title: "Аннотация"

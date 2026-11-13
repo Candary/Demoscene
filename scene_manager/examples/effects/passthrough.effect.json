@@ -1,0 +1,8 @@
+{
+ "id": "passthrough",
+ "kind": "post",
+ "cost": 1,
+ "shader": "passthrough.frag",
+ "doc": "Simple texture copy for COMPOSITE with additive blend.",
+ "uniforms": {}
+}

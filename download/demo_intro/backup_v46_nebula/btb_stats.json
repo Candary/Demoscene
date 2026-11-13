@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "updated": "2026-10-30T18:50:00Z",
+  "note": "BTB state — read at turn start (prefetch phase), read-modify-write at turn end. hit/miss = prefetch accuracy (separate axis from work outcome in roadmap). auto-prune entries confidence<0.3 after N trials.",
+  "entries": [
+    {
+      "signature": "!feat *shader* | !fix main.cpp *",
+      "prefetch": [
+        "roadmap.md",
+        "main.cpp:markers(CrashHandler,_CRT_SECURE_NO_WARNINGS,trace.log)",
+        "opengl_loader.h:1-40",
+        "md5:latestZip"
+      ],
+      "hits": 5,
+      "misses": 1,
+      "confidence": 0.83,
+      "last_result": "hit",
+      "last_updated": "2026-10-30T16:24:02Z",
+      "note": "shader/код-правки — стабильно нужен roadmap + markers + loader + md5"
+    },
+    {
+      "signature": "!diag *",
+      "prefetch": [
+        "upload/trace.log",
+        "trace_v45_GOOD_reference.log",
+        "roadmap.md:root-causes"
+      ],
+      "hits": 8,
+      "misses": 0,
+      "confidence": 0.95,
+      "last_result": "hit",
+      "last_updated": "2026-10-30T16:24:02Z",
+      "note": "диагноз — всегда trace.log + эталон + корневые причины"
+    },
+    {
+      "signature": "?*",
+      "prefetch": [
+        "roadmap.md:head(1-50)"
+      ],
+      "hits": 3,
+      "misses": 2,
+      "confidence": 0.6,
+      "last_result": "miss",
+      "last_updated": "2026-10-30T17:00:00Z",
+      "note": "вопросы — лёгкий контекст; иногда roadmap не нужен"
+    },
+    {
+      "signature": "!revert *",
+      "prefetch": [
+        "roadmap.md:tasks+status",
+        "backup_v*_*/"
+      ],
+      "hits": 2,
+      "misses": 0,
+      "confidence": 0.9,
+      "last_result": "hit",
+      "last_updated": "2026-10-30T17:00:00Z",
+      "note": "откат — нужен журнал задач+статусов и список бекапов"
+    },
+    {
+      "signature": "#proto * | #ok *",
+      "prefetch": [
+        "meta.auto",
+        "roadmap.md",
+        "btb_stats.json",
+        "scripts/gen_sigil_btb_doc.py"
+      ],
+      "hits": 3,
+      "misses": 1,
+      "confidence": 0.75,
+      "last_result": "hit",
+      "last_updated": "2026-10-30T18:50:00Z",
+      "note": "meta-амендменты. Task 53: #proto reject !macro + docx regen. Prefetch [meta.auto, roadmap, btb_stats, docx-gen]; использовал roadmap+docx-gen+btb_stats; over-fetch meta.auto; gap нет → HIT."
+    },
+    {
+      "signature": "#stats *",
+      "prefetch": [
+        "btb_stats.json",
+        "roadmap.md"
+      ],
+      "hits": 2,
+      "misses": 0,
+      "confidence": 0.8,
+      "last_result": "hit",
+      "last_updated": "2026-10-30T18:40:00Z",
+      "note": "split from #proto|#ok|#stats at Task 52. Tighter prefetch [btb_stats, roadmap]. Task 52-turn: ЧИСТЫЙ HIT (no gap, no over-fetch) — split валидирован."
+    }
+  ],
+  "last_stats": "2026-10-30T18:40:00Z",
+  "pruned": []
+}

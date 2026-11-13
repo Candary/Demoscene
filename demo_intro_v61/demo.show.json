@@ -1,0 +1,574 @@
+{
+  "format": "scene-manager/1",
+  "meta": {
+    "title": "v61 — Volumetric Color Adapter + Per-Scene Palettes",
+    "duration": 211,
+    "resolution": [
+      1280,
+      720
+    ],
+    "fps": 60,
+    "seed": 2026,
+    "prewarm": 3.0
+  },
+  "audio": {
+    "bpm": 128.0,
+    "offset": 0.0,
+    "beats_per_bar": 4,
+    "markers": [],
+    "energy": [
+      0.05,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.55,
+      0.6,
+      0.7,
+      0.78,
+      0.82,
+      0.85,
+      0.88,
+      0.92,
+      0.98,
+      1.0,
+      1.0,
+      0.98,
+      0.92,
+      0.85,
+      0.9,
+      0.95,
+      0.92,
+      0.88,
+      0.85,
+      0.92,
+      1.0,
+      1.0,
+      0.98,
+      0.92,
+      0.85,
+      0.78,
+      0.7,
+      0.62,
+      0.55,
+      0.48,
+      0.4,
+      0.33,
+      0.27,
+      0.22,
+      0.18,
+      0.15,
+      0.12,
+      0.1,
+      0.08,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.55,
+      0.5,
+      0.45,
+      0.4
+    ],
+    "sections": [
+      {
+        "start": 0.0
+      },
+      {
+        "start": 27.0
+      },
+      {
+        "start": 77.0
+      },
+      {
+        "start": 127.0
+      },
+      {
+        "start": 181.0
+      }
+    ]
+  },
+  "palettes": {
+    "p": {
+      "primary": "#000000",
+      "accent": "#ffffff"
+    }
+  },
+  "looks": {},
+  "tracks": [
+    {
+      "id": "main",
+      "order": 10
+    },
+    {
+      "id": "post",
+      "order": 25
+    },
+    {
+      "id": "evt",
+      "order": 30
+    }
+  ],
+  "clips": [
+    {
+      "id": "s1",
+      "track": "main",
+      "kind": "scene",
+      "effect": "nebula_raymarch",
+      "start": 0,
+      "duration": 25,
+      "palette": "p",
+      "seed": 11111,
+      "map": {
+        "uPrimaryColor": [
+          0.050980392156862744,
+          0.12156862745098039,
+          0.30196078431372547
+        ],
+        "uAccentColor": [
+          0.2,
+          0.6,
+          0.8
+        ],
+        "uIntensity": 1.5,
+        "uMotionSpeed": 1.0,
+        "uPulse": 0.0
+      }
+    },
+    {
+      "id": "s2",
+      "track": "main",
+      "kind": "scene",
+      "effect": "sphere_scene",
+      "start": 25,
+      "duration": 25,
+      "palette": "p",
+      "seed": 22222,
+      "map": {
+        "uColor": [
+          0.10196078431372549,
+          0.4,
+          0.8
+        ],
+        "uGlow": 1.2,
+        "uOrbit": 0.0
+      }
+    },
+    {
+      "id": "s3",
+      "track": "main",
+      "kind": "scene",
+      "effect": "particle_swarm",
+      "start": 50,
+      "duration": 25,
+      "palette": "p",
+      "seed": 33333,
+      "map": {
+        "uColor": [
+          0.9490196078431372,
+          0.2,
+          0.5333333333333333
+        ],
+        "uSwarm": 0.7,
+        "uBeatKick": 0.0
+      }
+    },
+    {
+      "id": "s4",
+      "track": "main",
+      "kind": "scene",
+      "effect": "anxiety_mist",
+      "start": 75,
+      "duration": 25,
+      "palette": "p",
+      "seed": 44444,
+      "map": {
+        "uPrimaryColor": [
+          0.25098039215686274,
+          0.050980392156862744,
+          0.10196078431372549
+        ],
+        "uAccentColor": [
+          0.8,
+          0.1411764705882353,
+          0.09411764705882353
+        ],
+        "uIntensity": 1.8,
+        "uMotionSpeed": 1.5,
+        "uWarmth": 0.85
+      }
+    },
+    {
+      "id": "s5",
+      "track": "main",
+      "kind": "scene",
+      "effect": "morph_grid",
+      "start": 100,
+      "duration": 25,
+      "palette": "p",
+      "seed": 55555,
+      "map": {
+        "uColor": [
+          0.30196078431372547,
+          0.6,
+          0.8
+        ],
+        "uMorph": 0.5,
+        "uSpeed": 1.0
+      }
+    },
+    {
+      "id": "s6",
+      "track": "main",
+      "kind": "scene",
+      "effect": "cozy_room_sdf",
+      "start": 125,
+      "duration": 55,
+      "palette": "p",
+      "seed": 66666,
+      "map": {
+        "uLightColor": [
+          1.0,
+          0.8392156862745098,
+          0.6
+        ],
+        "uCamAngle": 0.15
+      },
+      "arrays": {
+        "uPrimitives": [
+          0,
+          0,
+          5.0,
+          0.1,
+          5.0,
+          0.0,
+          -1.5,
+          0.0,
+          0.0,
+          0.8,
+          0.7,
+          0.5,
+          0,
+          0,
+          5.0,
+          3.0,
+          0.1,
+          0.0,
+          0.0,
+          -2.5,
+          0.0,
+          0.4,
+          0.3,
+          0.25,
+          0,
+          0,
+          0.1,
+          3.0,
+          5.0,
+          -2.5,
+          0.0,
+          0.0,
+          0.0,
+          0.5,
+          0.35,
+          0.25,
+          0,
+          0,
+          0.1,
+          3.0,
+          5.0,
+          2.5,
+          0.0,
+          0.0,
+          0.0,
+          0.5,
+          0.35,
+          0.25,
+          0,
+          0,
+          1.5,
+          0.1,
+          1.0,
+          0.0,
+          -0.5,
+          0.0,
+          0.0,
+          0.4,
+          0.25,
+          0.15,
+          1,
+          0,
+          0.2,
+          0.2,
+          0.2,
+          0.0,
+          0.1,
+          0.0,
+          0.0,
+          1.0,
+          0.85,
+          0.4,
+          2,
+          0,
+          0.08,
+          0.1,
+          0.08,
+          0.5,
+          -0.42,
+          0.3,
+          0.0,
+          0.9,
+          0.9,
+          0.95,
+          0,
+          0,
+          0.3,
+          0.05,
+          0.4,
+          -0.4,
+          -0.43,
+          0.2,
+          0.3,
+          0.7,
+          0.2,
+          0.2,
+          2,
+          0,
+          0.15,
+          0.25,
+          0.15,
+          -1.8,
+          -1.2,
+          1.5,
+          0.0,
+          0.55,
+          0.3,
+          0.2,
+          0,
+          0,
+          1.5,
+          1.5,
+          0.05,
+          2.4,
+          0.3,
+          -1.0,
+          0.0,
+          0.7,
+          0.85,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": "s7",
+      "track": "main",
+      "kind": "scene",
+      "effect": "morphing_figures",
+      "start": 181,
+      "duration": 30,
+      "palette": "p",
+      "seed": 77777,
+      "map": {}
+    },
+    {
+      "id": "t1",
+      "track": "main",
+      "kind": "transition",
+      "effect": "crossfade",
+      "start": 23,
+      "duration": 4,
+      "between": [
+        "s1",
+        "s2"
+      ],
+      "palette": "p",
+      "seed": 10101,
+      "map": {}
+    },
+    {
+      "id": "t2",
+      "track": "main",
+      "kind": "transition",
+      "effect": "flash",
+      "start": 48,
+      "duration": 4,
+      "between": [
+        "s2",
+        "s3"
+      ],
+      "palette": "p",
+      "seed": 20202,
+      "map": {
+        "uColor": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "uPeak": 1.0
+      }
+    },
+    {
+      "id": "t3",
+      "track": "main",
+      "kind": "transition",
+      "effect": "crossfade",
+      "start": 73,
+      "duration": 4,
+      "between": [
+        "s3",
+        "s4"
+      ],
+      "palette": "p",
+      "seed": 30303,
+      "map": {}
+    },
+    {
+      "id": "t4",
+      "track": "main",
+      "kind": "transition",
+      "effect": "flash",
+      "start": 98,
+      "duration": 4,
+      "between": [
+        "s4",
+        "s5"
+      ],
+      "palette": "p",
+      "seed": 40404,
+      "map": {
+        "uColor": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "uPeak": 1.0
+      }
+    },
+    {
+      "id": "t5",
+      "track": "main",
+      "kind": "transition",
+      "effect": "crossfade",
+      "start": 123,
+      "duration": 4,
+      "between": [
+        "s5",
+        "s6"
+      ],
+      "palette": "p",
+      "seed": 50505,
+      "map": {}
+    },
+    {
+      "id": "t6",
+      "track": "main",
+      "kind": "transition",
+      "effect": "crossfade",
+      "start": 180,
+      "duration": 1,
+      "between": [
+        "s6",
+        "s7"
+      ],
+      "palette": "p",
+      "seed": 60606,
+      "map": {}
+    },
+    {
+      "id": "blm_bright",
+      "track": "post",
+      "kind": "post",
+      "effect": "bloom_bright",
+      "start": 0,
+      "duration": 211,
+      "palette": "p",
+      "seed": 77007,
+      "map": {
+        "uThreshold": 0.6,
+        "uIntensity": 1.0
+      }
+    },
+    {
+      "id": "blm_blurh",
+      "track": "post",
+      "kind": "post",
+      "effect": "bloom_blur",
+      "start": 0,
+      "duration": 211,
+      "palette": "p",
+      "seed": 77008,
+      "map": {
+        "uDirection": [
+          1.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "id": "blm_blurv",
+      "track": "post",
+      "kind": "post",
+      "effect": "bloom_blur",
+      "start": 0,
+      "duration": 211,
+      "palette": "p",
+      "seed": 77009,
+      "map": {
+        "uDirection": [
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": "blm_add",
+      "track": "post",
+      "kind": "post",
+      "effect": "passthrough",
+      "start": 0,
+      "duration": 211,
+      "palette": "p",
+      "seed": 77010,
+      "map": {}
+    },
+    {
+      "id": "vig",
+      "track": "post",
+      "kind": "post",
+      "effect": "vignette",
+      "start": 0,
+      "duration": 211,
+      "palette": "p",
+      "seed": 99001,
+      "map": {
+        "uStrength": 0.35,
+        "uSoftness": 0.5
+      }
+    },
+    {
+      "id": "grn",
+      "track": "post",
+      "kind": "post",
+      "effect": "grain",
+      "start": 0,
+      "duration": 211,
+      "palette": "p",
+      "seed": 88008,
+      "map": {
+        "uAmount": 0.2
+      }
+    },
+    {
+      "id": "fin",
+      "track": "evt",
+      "kind": "event",
+      "effect": "finish",
+      "start": 211,
+      "duration": 0,
+      "palette": "p",
+      "seed": 77777,
+      "map": {}
+    }
+  ]
+}

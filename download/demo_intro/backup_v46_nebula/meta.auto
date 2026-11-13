@@ -1,0 +1,17 @@
+# meta.auto — автоподстановка для sigil-протокола (ведёт ассистент)
+# Task 49, user #ok 2026-10-30. Файловый артефакт; survive via zip + canonical, как roadmap.md.
+# Пользователь пишет токен слева → я подставляю значение справа (или разрешаю правило).
+
+[v]              default=maxTask            # max номер задачи из roadmap.md
+[md5]            default=latestZip          # md5sum download/demo_intro_latest.zip
+[md5:milestone]  = c0cbce51ba1b11f90cbfc474c0b2d70a   # замороженная v43_WORKING
+[status]         default=auto               # из roadmap: последний подтверждённый статус
+[env:mine]       = x64,GTX750,driver560.94,Win11   # закреплено один раз; менять при смене GPU/драйвера
+[trace]          default=auto               # attached если файл прикреплён, иначе missing
+[scope]          default=infer              # я вывожу scope из описания фичи
+[avoid:default]  = opengl_loader.h, build_msvc.bat, build_mingw.bat   # НЕ трогать, если не сказано явно
+[revert:default] = lastgood                 # последняя версия со status=working
+[revert:lastgood]= <резолвится из roadmap: latest status=working>
+[prio:default]   = optional
+[after:default]  = contains("First frame rendered") AND NOT contains("[FATAL]") AND contains("[Exit]") AND contains("code 0")   # исполняемый предикат DSL (contains/grep/NOT/AND/OR)
+[btb:source]     = btb_stats.json           # где живёт состояние BTB (read-modify-write каждый ход)

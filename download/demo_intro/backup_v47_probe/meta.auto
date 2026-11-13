@@ -1,0 +1,24 @@
+# meta.auto — автоподстановка для sigil-протокола (ведёт ассистент)
+# Task 49, user #ok 2026-10-30. Файловый артефакт; survive via zip + canonical, как roadmap.md.
+# Пользователь пишет токен слева → я подставляю значение справа (или разрешаю правило).
+
+[v]              default=maxTask            # max номер задачи из roadmap.md
+[md5]            default=latestZip          # md5sum download/demo_intro_latest.zip
+[md5:milestone]  = c0cbce51ba1b11f90cbfc474c0b2d70a   # замороженная v43_WORKING
+[status]         default=auto               # из roadmap: последний подтверждённый статус
+[env:mine]       = x64,GTX750,driver560.94,Win11   # закреплено один раз; менять при смене GPU/драйвера
+[trace]          default=auto               # attached если файл прикреплён, иначе missing
+[scope]          default=infer              # я вывожу scope из описания фичи
+[avoid:default]  = opengl_loader.h, build_msvc.bat, build_mingw.bat   # НЕ трогать, если не сказано явно
+[revert:default] = lastgood                 # последняя версия со status=working
+[revert:lastgood]= <резолвится из roadmap: latest status=working>
+[prio:default]   = optional
+[after:default]  = run.contains("First frame rendered") AND NOT run.contains("[FATAL]") AND run.line("[Exit] Main loop ended (code 0)")   # A7 (Task 55): fixed-string + scoped to RUN section + line-exact (фикс code 0xC0000005 false-positive)
+[btb:source]     = btb_stats.json           # где живёт состояние BTB (read-modify-write каждый ход)
+# === Task 55 (review fixes A7/A10) ===
+# after-DSL семантика (A7): contains/run.contains/build.contains = fixed-string (-F); line()/run.line() = line-exact;
+#   count(STR)==N = count LINES containing fixed-string; precedence NOT>AND>OR; скобки; голая строка НЕ shorthand (требуется contains()).
+#   scope: build.* = BUILD-секция trace.log; run.* = RUN-секция (между "=== RUN START ===" и концом). Фикс: grep("nebula")==0 не ломается на "nebula.glsl" в выводе компилятора.
+[status:levels] = unverified → passed → confirmed   # A10: after-pass = passed (log-milestone OK, визуал не проверен); user @status=confirmed или #milestone = confirmed
+[lastgood]      = only confirmed   # A10: lastgood указывает ТОЛЬКО на confirmed (не на after-passed) — защита от «log-passed но чёрный экран»
+[md5:canonical] = chat-printed    # A6: md5 напечатанный в #ack-блоке чата = canonical checkpoint; sandbox-md5 сверяется с последним напечатанным (chat не откатывается)

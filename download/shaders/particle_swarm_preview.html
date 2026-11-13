@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>particle_swarm.frag — preview</title>
+<style>
+  body { margin: 0; background: #000; overflow: hidden; font-family: monospace; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  .hud {
+    position: absolute; top: 8px; left: 8px;
+    color: #6f6; font: 12px monospace;
+    background: rgba(0,0,0,0.85); padding: 8px 12px; border-radius: 4px;
+    max-width: 95vw; white-space: pre-wrap;
+  }
+  .hud.err { color: #f66; }
+  .hud.ok  { color: #6f6; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud" id="hud">init…</div>
+
+<script id="vs" type="x-shader/x-vertex">#version 300 es
+in vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+</script>
+
+<script id="fs" type="x-shader/x-fragment">#version 300 es
+precision highp float;
+precision highp int;
+
+out vec4 FragColor;
+
+uniform float uTime;
+uniform float uClipTime;
+uniform float uProgress;
+uniform float uGlobalTime;
+uniform vec2  uResolution;
+uniform int   uSeed;
+uniform float uBeat;
+uniform float uBeatPhase;
+uniform float uBarPhase;
+uniform float uEnergy;
+
+uniform vec3  uColor;
+uniform float uSwarm;
+uniform float uBeatKick;
+
+const float PI  = 3.14159265359;
+const float TAU = 6.28318530718;
+const int   N_PARTICLES = 16;
+
+float rng(float n) {
+    uint i = floatBitsToUint(n) ^ (uint(uSeed) * 0x9E3779B1u);
+    i ^= i >> 16u; i *= 0x85ebca6bu;
+    i ^= i >> 13u; i *= 0xc2b2ae35u;
+    i ^= i >> 16u;
+    return float(i) * (1.0 / 4294967296.0);
+}
+
+float hash3(vec3 p) {
+    p = fract(p * 0.3183099 + 0.1);
+    p *= 17.0;
+    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+float noise3(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float na = hash3(i + vec3(0,0,0));
+    float nb = hash3(i + vec3(1,0,0));
+    float nc = hash3(i + vec3(0,1,0));
+    float nd = hash3(i + vec3(1,1,0));
+    float ne = hash3(i + vec3(0,0,1));
+    float nf = hash3(i + vec3(1,0,1));
+    float ng = hash3(i + vec3(0,1,1));
+    float nh = hash3(i + vec3(1,1,1));
+    return mix(mix(mix(na, nb, f.x), mix(nc, nd, f.x), f.y),
+               mix(mix(ne, nf, f.x), mix(ng, nh, f.x), f.y), f.z);
+}
+
+float sdSphere(vec3 p, float r) { return length(p) - r; }
+
+float smin(float a, float b, float k) {
+    float kk = max(k, 0.005);
+    float h = clamp(0.5 + 0.5 * (b - a) / kk, 0.0, 1.0);
+    return mix(b, a, h) - kk * h * (1.0 - h);
+}
+
+// WebGL2/GLSL ES 300 не поддерживает indexing array с loop variable
+// на всех GPU надёжно. Раскрываем 16 позиций в глобальные переменные.
+vec3 gP0;  vec3 gP1;  vec3 gP2;  vec3 gP3;
+vec3 gP4;  vec3 gP5;  vec3 gP6;  vec3 gP7;
+vec3 gP8;  vec3 gP9;  vec3 gP10; vec3 gP11;
+vec3 gP12; vec3 gP13; vec3 gP14; vec3 gP15;
+float gR0;  float gR1;  float gR2;  float gR3;
+float gR4;  float gR5;  float gR6;  float gR7;
+float gR8;  float gR9;  float gR10; float gR11;
+float gR12; float gR13; float gR14; float gR15;
+
+void precomputeParticles() {
+    float t = uTime;
+    float swarmScale = 0.3 + 0.7 * uSwarm;
+    float kickPush = uBeatKick * 0.8;
+
+    // 16 частиц — unrolled
+    // i=0
+    { float fi=0.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP0 = base + off; gR0 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+    // i=1..15 — то же самое, fi=1..15
+    // (генерируется копированием для WebGL совместимости)
+    { float fi=1.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP1 = base + off; gR1 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+    { float fi=2.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP2 = base + off; gR2 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+    { float fi=3.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP3 = base + off; gR3 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+    { float fi=4.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP4 = base + off; gR4 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+    { float fi=5.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP5 = base + off; gR5 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+    { float fi=6.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP6 = base + off; gR6 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+    { float fi=7.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP7 = base + off; gR7 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+    { float fi=8.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP8 = base + off; gR8 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+    { float fi=9.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP9 = base + off; gR9 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+    { float fi=10.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP10 = base + off; gR10 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+    { float fi=11.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP11 = base + off; gR11 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+    { float fi=12.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP12 = base + off; gR12 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+    { float fi=13.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP13 = base + off; gR13 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+    { float fi=14.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP14 = base + off; gR14 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+    { float fi=15.0;
+      float theta = PI * rng(fi*1.7+0.3); float phi = TAU * rng(fi*2.3+1.1);
+      float rBase = 0.8 + 0.4 * rng(fi*3.1+2.7);
+      vec3 base = vec3(sin(theta)*cos(phi)*rBase, sin(theta)*sin(phi)*rBase, cos(theta)*rBase);
+      float sp = 0.3 + 0.5*rng(fi*4.5+3.3); float a=t*sp;
+      mat2 s = mat2(cos(a),-sin(a),sin(a),cos(a)); base.xz = s*base.xz;
+      vec3 ni = vec3(fi*0.5, t*0.4, fi*0.3);
+      vec3 off; off.x = noise3(ni)-0.5; off.y = noise3(ni+vec3(13.7,0,0))-0.5; off.z = noise3(ni+vec3(0,17.3,0))-0.5;
+      off *= swarmScale * 1.5;
+      base += normalize(base + vec3(0.001)) * kickPush;
+      gP15 = base + off; gR15 = 0.18 + 0.08*rng(fi*5.7+4.1);
+    }
+}
+
+float mapScene(vec3 p) {
+    float d = sdSphere(p - gP0,  gR0);
+    d = smin(d, sdSphere(p - gP1,  gR1),  0.20);
+    d = smin(d, sdSphere(p - gP2,  gR2),  0.20);
+    d = smin(d, sdSphere(p - gP3,  gR3),  0.20);
+    d = smin(d, sdSphere(p - gP4,  gR4),  0.20);
+    d = smin(d, sdSphere(p - gP5,  gR5),  0.20);
+    d = smin(d, sdSphere(p - gP6,  gR6),  0.20);
+    d = smin(d, sdSphere(p - gP7,  gR7),  0.20);
+    d = smin(d, sdSphere(p - gP8,  gR8),  0.20);
+    d = smin(d, sdSphere(p - gP9,  gR9),  0.20);
+    d = smin(d, sdSphere(p - gP10, gR10), 0.20);
+    d = smin(d, sdSphere(p - gP11, gR11), 0.20);
+    d = smin(d, sdSphere(p - gP12, gR12), 0.20);
+    d = smin(d, sdSphere(p - gP13, gR13), 0.20);
+    d = smin(d, sdSphere(p - gP14, gR14), 0.20);
+    d = smin(d, sdSphere(p - gP15, gR15), 0.20);
+    return d;
+}
+
+vec3 calcNormal(vec3 p) {
+    const vec2 k = vec2(1.0, -1.0);
+    const float e = 0.001;
+    return normalize(
+        k.xyy * mapScene(p + k.xyy * e) +
+        k.yyx * mapScene(p + k.yyx * e) +
+        k.yxy * mapScene(p + k.yxy * e) +
+        k.xxx * mapScene(p + k.xxx * e)
+    );
+}
+
+vec2 rayMarch(vec3 ro, vec3 rd) {
+    vec3 oc = ro;
+    float b = dot(oc, rd);
+    float c = dot(oc, oc) - 12.25;
+    float disc = b * b - c;
+    if (disc < 0.0) return vec2(-1.0, 0.0);
+    float tStart = max(0.0, -b - sqrt(disc));
+    float t = tStart;
+    const int STEPS = 48;
+    const float MAX_DIST = 30.0;
+    for (int i = 0; i < STEPS; i++) {
+        vec3 p = ro + rd * t;
+        float d = mapScene(p);
+        if (d < 0.001) return vec2(t, 1.0);
+        if (t > MAX_DIST) break;
+        t += d;
+    }
+    return vec2(-1.0, 0.0);
+}
+
+vec3 lightDir() {
+    float a = uTime * 0.5;
+    return normalize(vec3(sin(a), 0.6, cos(a)));
+}
+
+vec3 backgroundColor(vec3 rd) {
+    float t = 0.5 + 0.5 * rd.y;
+    vec3 base = mix(vec3(0.02, 0.02, 0.05), vec3(0.06, 0.07, 0.12), t);
+    return base + uColor * 0.04 * (1.0 - t);
+}
+
+vec3 aces(vec3 c) {
+    return (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);
+}
+
+float swarmDensity(vec3 p) {
+    float d0  = length(p - gP0);  float d1  = length(p - gP1);
+    float d2  = length(p - gP2);  float d3  = length(p - gP3);
+    float d4  = length(p - gP4);  float d5  = length(p - gP5);
+    float d6  = length(p - gP6);  float d7  = length(p - gP7);
+    float d8  = length(p - gP8);  float d9  = length(p - gP9);
+    float d10 = length(p - gP10); float d11 = length(p - gP11);
+    float d12 = length(p - gP12); float d13 = length(p - gP13);
+    float d14 = length(p - gP14); float d15 = length(p - gP15);
+    float density = 0.0;
+    density += exp(-d0*d0*4.0);  density += exp(-d1*d1*4.0);
+    density += exp(-d2*d2*4.0);  density += exp(-d3*d3*4.0);
+    density += exp(-d4*d4*4.0);  density += exp(-d5*d5*4.0);
+    density += exp(-d6*d6*4.0);  density += exp(-d7*d7*4.0);
+    density += exp(-d8*d8*4.0);  density += exp(-d9*d9*4.0);
+    density += exp(-d10*d10*4.0); density += exp(-d11*d11*4.0);
+    density += exp(-d12*d12*4.0); density += exp(-d13*d13*4.0);
+    density += exp(-d14*d14*4.0); density += exp(-d15*d15*4.0);
+    return density / 16.0;
+}
+
+void main() {
+    vec2 fragUv = gl_FragCoord.xy / uResolution;
+    vec2 uv = (fragUv * 2.0 - 1.0) * vec2(uResolution.x / uResolution.y, 1.0);
+
+    precomputeParticles();
+
+    float cam_t = uTime * 0.15;
+    vec3 ro = vec3(sin(cam_t) * 5.0, 1.5, cos(cam_t) * 5.0);
+    vec3 ta = vec3(0.0);
+    vec3 fwd = normalize(ta - ro);
+    vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), fwd));
+    vec3 up = cross(fwd, right);
+    vec3 rd = normalize(fwd + uv.x * right + uv.y * up);
+
+    vec3 bg = backgroundColor(rd);
+    vec2 hit = rayMarch(ro, rd);
+
+    vec3 col;
+    if (hit.x < 0.0) {
+        col = bg;
+    } else {
+        vec3 p = ro + rd * hit.x;
+        vec3 n = calcNormal(p);
+        vec3 ld = lightDir();
+        float diff = max(dot(n, ld), 0.0);
+        float amb = 0.18 + 0.12 * max(dot(n, vec3(0.0, 1.0, 0.0)), 0.0);
+        vec3 viewDir = -rd;
+        vec3 halfDir = normalize(ld + viewDir);
+        float spec = pow(max(dot(n, halfDir), 0.0), 24.0);
+        float density = swarmDensity(p);
+        float glowMul = 0.5 + density * 1.5;
+        glowMul += uBeatKick * 0.8;
+        vec3 surfColor = uColor * glowMul;
+        vec3 surface = surfColor * (amb + diff * 0.7) + vec3(1.0) * spec * 0.4;
+        surface += uColor * (0.3 + 0.4 * uSwarm);
+        float fog = 1.0 - exp(-hit.x * 0.06);
+        col = mix(surface, bg, fog * 0.4);
+    }
+
+    vec2 vd = fragUv - 0.5;
+    col *= 1.0 - 0.35 * dot(vd, vd) * 2.0;
+    col = aces(col);
+    col = pow(clamp(col, 0.0, 1.0), vec3(1.0 / 2.2));
+    FragColor = vec4(col, 1.0);
+}
+</script>
+
+<script>
+(function () {
+    const canvas = document.getElementById('c');
+    const hud = document.getElementById('hud');
+    const log = [];
+    function setHud(cls, msg) { hud.className = 'hud ' + cls; hud.textContent = msg; }
+    function push(msg) { log.push(msg); setHud('', log.join('\n')); }
+
+    try {
+        push('step 1: get webgl2 context…');
+        const gl = canvas.getContext('webgl2', { antialias: false, premultipliedAlpha: false });
+        if (!gl) { setHud('err', 'ERROR: WebGL2 не поддерживается.'); return; }
+        push('step 2: ' + gl.getParameter(gl.VERSION));
+        push('step 3: renderer=' + gl.getParameter(gl.RENDERER).substring(0, 60));
+
+        function compile(type, src, name) {
+            const sh = gl.createShader(type);
+            gl.shaderSource(sh, src);
+            gl.compileShader(sh);
+            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+                setHud('err', 'SHADER ERROR [' + name + ']:\n' + gl.getShaderInfoLog(sh));
+                throw new Error('compile ' + name);
+            }
+            return sh;
+        }
+
+        const vsSrc = document.getElementById('vs').textContent.trim();
+        const fsSrc = document.getElementById('fs').textContent.trim();
+        push('step 4: compile vertex shader…');
+        const vs = compile(gl.VERTEX_SHADER, vsSrc, 'vertex');
+        push('step 5: compile fragment shader (' + fsSrc.length + ' bytes)…');
+        const fs = compile(gl.FRAGMENT_SHADER, fsSrc, 'fragment');
+
+        push('step 6: link program…');
+        const prog = gl.createProgram();
+        gl.attachShader(prog, vs);
+        gl.attachShader(prog, fs);
+        gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+            setHud('err', 'LINK ERROR:\n' + gl.getProgramInfoLog(prog));
+            return;
+        }
+        gl.useProgram(prog);
+        push('step 7: program linked OK');
+
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+        const aPos = gl.getAttribLocation(prog, 'aPos');
+        gl.enableVertexAttribArray(aPos);
+        gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+        const U = {};
+        ['uTime','uClipTime','uProgress','uGlobalTime','uResolution','uSeed',
+         'uBeat','uBeatPhase','uBarPhase','uEnergy','uColor','uSwarm','uBeatKick']
+            .forEach(name => U[name] = gl.getUniformLocation(prog, name));
+
+        const test = {
+            uColor: [0.95, 0.20, 0.55],  // magenta (palette.accent)
+            uSeed: 2026,
+        };
+
+        function resize() {
+            // DPR cap = 1 — для raymarch это критично, FPS падает в 4× на HiDPI без cap.
+            const dpr = 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        let mouseRotY = 0, dragging = false, lastX = 0;
+        canvas.addEventListener('mousedown', e => { dragging = true; lastX = e.clientX; });
+        window.addEventListener('mouseup', () => dragging = false);
+        window.addEventListener('mousemove', e => {
+            if (!dragging) return;
+            mouseRotY += (e.clientX - lastX) * 0.005;
+            lastX = e.clientX;
+        });
+
+        const start = performance.now();
+        let lastFrameT = 0, frameCount = 0, fpsSmooth = 0;
+        function frame() {
+            const T = (performance.now() - start) / 1000;
+            const dt = lastFrameT > 0 ? (T - lastFrameT) : 0.016;
+            lastFrameT = T;
+            const instantFps = 1.0 / dt;
+            fpsSmooth = fpsSmooth > 0 ? fpsSmooth * 0.9 + instantFps * 0.1 : instantFps;
+
+            const beat = T * 2.0;
+            const beatPhase = beat - Math.floor(beat);
+            const energy = 0.5 + 0.4 * Math.sin(T * 0.5);
+
+            gl.uniform1f(U.uTime, T);
+            gl.uniform1f(U.uClipTime, T);
+            gl.uniform1f(U.uProgress, Math.min(T / 5, 1));
+            gl.uniform1f(U.uGlobalTime, T);
+            gl.uniform2f(U.uResolution, canvas.width, canvas.height);
+            gl.uniform1i(U.uSeed, test.uSeed);
+            gl.uniform1f(U.uBeat, beat);
+            gl.uniform1f(U.uBeatPhase, beatPhase);
+            gl.uniform1f(U.uBarPhase, (beat / 4) - Math.floor(beat / 4));
+            gl.uniform1f(U.uEnergy, energy);
+            gl.uniform3fv(U.uColor, test.uColor);
+            gl.uniform1f(U.uSwarm, Math.max(0, Math.min(1, energy)));
+            gl.uniform1f(U.uBeatKick, Math.pow(1 - beatPhase, 3));
+
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+            frameCount++;
+            if (frameCount % 15 === 0) {
+                setHud('ok', '✅ particle_swarm  |  T=' + T.toFixed(1) + 's' +
+                       '  |  swarm=' + Math.max(0, Math.min(1, energy)).toFixed(2) +
+                       '  |  kick=' + Math.pow(1 - beatPhase, 3).toFixed(2) +
+                       '  |  FPS=' + fpsSmooth.toFixed(0) +
+                       '  |  res=' + canvas.width + 'x' + canvas.height +
+                       '  |  drag to rotate');
+            }
+            requestAnimationFrame(frame);
+        }
+        push('step 8: starting render loop…');
+        frame();
+    } catch (e) {
+        setHud('err', 'EXCEPTION:\n' + (e && e.message ? e.message : String(e)) + '\n\nLog:\n' + log.join('\n'));
+        console.error(e);
+    }
+})();
+</script>
+</body>
+</html>

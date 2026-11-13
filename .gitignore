@@ -1,20 +1,2 @@
-# Build artifacts
-*.obj
-*.exe
-*.pdb
-*.ilk
-
-# Logs
-trace.log
-*.log
-
-# OS files
-Thumbs.db
-.DS_Store
-
-# Editor files
-*.swp
-*.swo
-*~
-.vscode/
-.idea/
+skills/
+node_modules/

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Visual Debugger — Uroboros</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  #status {
+    position: fixed; top: 4px; left: 4px;
+    color: #6f6; font: 11px monospace;
+    background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 3px;
+    pointer-events: none; max-width: 95vw; white-space: pre-wrap;
+  }
+  #status.err { color: #f66; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="status">init…</div>
+
+<script>
+// =============================================================================
+// visual_debug.html — Uroboros visual debugger
+// =============================================================================
+// Renders a single frame of a scene at specified time T with specified uniforms.
+// URL params:
+//   scene=<effect_name>           e.g. nebula_raymarch
+//   t=<seconds>                   time T to render at (default 5.0)
+//   shaderPath=<url>              path to .frag file (default: auto from scene)
+//   uPrimaryColor=r,g,b           uniform override (0..1 floats)
+//   uAccentColor=r,g,b
+//   uColor=r,g,b
+//   uLightColor=r,g,b
+//   uIntensity=<float>
+//   uMotionSpeed=<float>
+//   uWarmth=<float>
+//   uPulse=<float>
+//   uGlow=<float>
+//   uMorph=<float>
+//   uSeed=<int>
+//   width=<px>                    canvas width (default 1280)
+//   height=<px>                   canvas height (default 720)
+//
+// After rendering one frame at time T:
+//   - Sets window.frameReady = true
+//   - Posts message to parent: { type: 'READY', scene, t, frameCount }
+//   - Stops rendering (single-frame mode)
+// =============================================================================
+
+const params = new URLSearchParams(location.search);
+const SCENE = params.get('scene') || 'nebula_raymarch';
+const T = parseFloat(params.get('t') || '5.0');
+const WIDTH = parseInt(params.get('width') || '1280');
+const HEIGHT = parseInt(params.get('height') || '720');
+const SHADER_PATH = params.get('shaderPath') ||
+    `../../demo_intro_v61/shaders/${SCENE}.frag`;
+
+// Parse uniform overrides from URL params
+const uniformOverrides = {};
+for (const [key, value] of params.entries()) {
+    if (key.startsWith('u') && !['uTime', 'uClipTime', 'uProgress',
+        'uGlobalTime', 'uResolution', 'uBeat', 'uBeatPhase', 'uBarPhase',
+        'uEnergy'].includes(key)) {
+        if (value.includes(',')) {
+            uniformOverrides[key] = value.split(',').map(parseFloat);
+        } else {
+            const n = parseFloat(value);
+            if (!isNaN(n)) uniformOverrides[key] = n;
+            else if (value === 'true' || value === 'false') {
+                uniformOverrides[key] = value === 'true';
+            } else {
+                const i = parseInt(value);
+                if (!isNaN(i)) uniformOverrides[key] = i;
+            }
+        }
+    }
+}
+
+const statusEl = document.getElementById('status');
+function setStatus(msg, isErr = false) {
+    statusEl.textContent = msg;
+    statusEl.className = isErr ? 'err' : '';
+}
+
+const canvas = document.getElementById('c');
+canvas.width = WIDTH;
+canvas.height = HEIGHT;
+
+const gl = canvas.getContext('webgl2', {
+    antialias: false,
+    preserveDrawingBuffer: true,  // needed for screenshots
+    alpha: false,
+});
+
+if (!gl) {
+    setStatus('ERROR: WebGL2 not supported', true);
+    throw new Error('No WebGL2');
+}
+
+// Vertex shader (full-screen quad)
+const VS_SRC = `#version 300 es
+in vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+`;
+
+async function loadFragmentShader() {
+    const resp = await fetch(SHADER_PATH);
+    if (!resp.ok) {
+        throw new Error(`Failed to load ${SHADER_PATH}: ${resp.status}`);
+    }
+    let src = await resp.text();
+
+    // Convert GL 3.3 core → WebGL2 (GL ES 3.0)
+    src = src.replace(/^#version\s+330\s+core\s*/m, '');
+    src = src.replace(/^#version\s+330\s+/m, '');
+    src = src.replace(/^layout\s*\(.*?\)\s*out\s+/gm, 'out ');
+
+    const header = `#version 300 es
+precision highp float;
+precision highp int;
+`;
+    return header + src;
+}
+
+function compileShader(type, src) {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+        const log = gl.getShaderInfoLog(sh);
+        gl.deleteShader(sh);
+        throw new Error('Shader compile error: ' + log);
+    }
+    return sh;
+}
+
+async function main() {
+    setStatus(`Loading ${SCENE}.frag from ${SHADER_PATH}`);
+
+    let fsSrc;
+    try {
+        fsSrc = await loadFragmentShader();
+    } catch (e) {
+        setStatus(`ERROR: ${e.message}`, true);
+        window.frameReady = false;
+        window.frameError = e.message;
+        window.parent && window.parent.postMessage({ type: 'ERROR', msg: e.message }, '*');
+        return;
+    }
+
+    setStatus(`Compiling shaders…`);
+
+    let prog;
+    try {
+        const vs = compileShader(gl.VERTEX_SHADER, VS_SRC);
+        const fs = compileShader(gl.FRAGMENT_SHADER, fsSrc);
+        prog = gl.createProgram();
+        gl.attachShader(prog, vs);
+        gl.attachShader(prog, fs);
+        gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+            throw new Error('Link error: ' + gl.getProgramInfoLog(prog));
+        }
+    } catch (e) {
+        setStatus(`ERROR: ${e.message}`, true);
+        window.frameReady = false;
+        window.frameError = e.message;
+        window.parent && window.parent.postMessage({ type: 'ERROR', msg: e.message }, '*');
+        return;
+    }
+
+    gl.useProgram(prog);
+
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER,
+        new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+    const aPos = gl.getAttribLocation(prog, 'aPos');
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+    gl.viewport(0, 0, WIDTH, HEIGHT);
+
+    // Collect all uniforms
+    const U = {};
+    const nUniforms = gl.getProgramParameter(prog, gl.ACTIVE_UNIFORMS);
+    for (let i = 0; i < nUniforms; i++) {
+        const info = gl.getActiveUniform(prog, i);
+        U[info.name] = gl.getUniformLocation(prog, info.name);
+    }
+
+    function renderFrame() {
+        const t = T;
+        const beat = t * 2.0;  // 120 BPM default
+        const beatPhase = beat - Math.floor(beat);
+        const energy = 0.5 + 0.4 * Math.sin(t * 0.5);
+
+        const stdUniforms = {
+            uTime: t,
+            uClipTime: t,
+            uProgress: Math.min(t / 5, 1),
+            uGlobalTime: t,
+            uResolution: [WIDTH, HEIGHT],
+            uSeed: 2026,
+            uBeat: beat,
+            uBeatPhase: beatPhase,
+            uBarPhase: (beat / 4) - Math.floor(beat / 4),
+            uEnergy: energy,
+        };
+
+        for (const [name, val] of Object.entries(stdUniforms)) {
+            if (U[name] === null) continue;
+            if (Array.isArray(val)) {
+                if (val.length === 2) gl.uniform2fv(U[name], val);
+                else if (val.length === 3) gl.uniform3fv(U[name], val);
+                else if (val.length === 4) gl.uniform4fv(U[name], val);
+            } else if (typeof val === 'number') {
+                if (Number.isInteger(val)) gl.uniform1i(U[name], val);
+                else gl.uniform1f(U[name], val);
+            }
+        }
+
+        // Apply uniform overrides from URL
+        for (const [name, val] of Object.entries(uniformOverrides)) {
+            if (U[name] === null) continue;
+            if (Array.isArray(val)) {
+                if (val.length === 2) gl.uniform2fv(U[name], val);
+                else if (val.length === 3) gl.uniform3fv(U[name], val);
+                else if (val.length === 4) gl.uniform4fv(U[name], val);
+            } else if (typeof val === 'number') {
+                if (Number.isInteger(val)) gl.uniform1i(U[name], val);
+                else gl.uniform1f(U[name], val);
+            }
+        }
+
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+        // Signal ready
+        window.frameReady = true;
+        window.frameTime = T;
+        window.frameScene = SCENE;
+        window.frameUniforms = uniformOverrides;
+        setStatus(`OK ${SCENE} @ T=${T}s ready (rendered 1 frame)`);
+
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+                type: 'READY',
+                scene: SCENE,
+                t: T,
+                width: WIDTH,
+                height: HEIGHT,
+                uniforms: uniformOverrides,
+            }, '*');
+        }
+    }
+
+    requestAnimationFrame(renderFrame);
+}
+
+main();
+</script>
+</body>
+</html>

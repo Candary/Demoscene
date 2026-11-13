@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "updated": "2026-10-30T23:15:00Z",
+  "last_stats": "2026-10-30T23:15:00Z",
+  "schema_note": "v2 (Task 55): delta-only prefetch (base_set removed from entries); seed vs measured split; Laplace confidence; shadow_mode. Реформа по рецензии Claude (A2+A4+A5).",
+  "base_set": ["meta.auto", "btb_stats.json", "roadmap.md"],
+  "base_set_note": "Always read at turn start; NOT in BTB entries (no trivial hits, no circular prefetch). BTB tracks only signature-specific DELTA beyond base_set.",
+  "shadow_mode": true,
+  "shadow_mode_note": "A2: evaluate prefetch accuracy on every signature-matched turn, even below prefetch threshold (compare delta list vs actually-used files). Prevents dead-zone 0.3-0.6 (запись не замирает).",
+  "confidence_formula": "laplace: (seed_hits + measured_hits + 1) / (seed_n + measured_n + 2)",
+  "thresholds": {"prefetch": 0.6, "prune": 0.3},
+  "pruned": [],
+  "entries": [
+    {
+      "signature": "!feat *shader* | !fix main.cpp *",
+      "delta": ["main.cpp:markers", "opengl_loader.h", "shaders.h:kFragmentShaderSrc", "md5:latestZip"],
+      "seed": {"hits": 4, "misses": 2},
+      "measured": {"hits": 0, "misses": 0},
+      "confidence": 0.63,
+      "last_result": "seed",
+      "last_updated": "2026-10-30T23:15:00Z",
+      "note": "v2 delta-only. seed=историческая оценка delta-точности (main.cpp+shaders.h+md5 обычно нужны; opengl_loader иногда over-fetch; Task 54 shaders.h gap = 1 real miss под старой моделью). measured=0 (reset; real measurement под v2 starts next !feat *shader*)."
+    },
+    {
+      "signature": "!diag *",
+      "delta": ["upload/trace.log", "trace_v45_GOOD_reference.log"],
+      "seed": {"hits": 8, "misses": 0},
+      "measured": {"hits": 0, "misses": 0},
+      "confidence": 0.90,
+      "last_result": "seed",
+      "last_updated": "2026-10-30T23:15:00Z",
+      "note": "v2 delta-only. trace.log + reference всегда нужны для диагнозы."
+    },
+    {
+      "signature": "!revert *",
+      "delta": ["backup_v*_*/"],
+      "seed": {"hits": 2, "misses": 0},
+      "measured": {"hits": 0, "misses": 0},
+      "confidence": 0.75,
+      "last_result": "seed",
+      "last_updated": "2026-10-30T23:15:00Z",
+      "note": "v2 delta-only. backup list для выбора цели отката."
+    },
+    {
+      "signature": "#proto * | #ok *",
+      "delta": ["scripts/gen_sigil_btb_doc.py"],
+      "seed": {"hits": 2, "misses": 0},
+      "measured": {"hits": 0, "misses": 0},
+      "confidence": 0.75,
+      "last_result": "seed",
+      "last_updated": "2026-10-30T23:15:00Z",
+      "note": "v2 delta-only. docx-gen нужен когда proto-правка трогает доку. meta.auto/roadmap/btb_stats = base (всегда читаются)."
+    }
+  ],
+  "retired_signatures": [
+    {"signature": "?*", "reason": "base-only (no delta beyond base_set) — removed from BTB under v2 (A5). ?-вопросы не имеют signature-specific prefetch."},
+    {"signature": "#stats *", "reason": "base-only (no delta) — removed from BTB under v2 (A5). #stats still a valid command; just no BTB entry (nothing to prefetch beyond base)."}
+  ]
+}

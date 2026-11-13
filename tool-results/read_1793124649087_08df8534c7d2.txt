@@ -1,0 +1,1304 @@
+     1→<!DOCTYPE html>
+     2→<html lang="ru">
+     3→<head>
+     4→<meta charset="UTF-8">
+     5→<title>Demo Intro — Preview</title>
+     6→<style>
+     7→  * { box-sizing: border-box; margin: 0; padding: 0; }
+     8→  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+     9→  body {
+    10→    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    11→    color: #ddd;
+    12→  }
+    13→  #gl {
+    14→    position: fixed;
+    15→    top: 0; left: 0;
+    16→    width: 100vw;
+    17→    height: 100vh;
+    18→    display: block;
+    19→  }
+    20→  #hud {
+    21→    position: fixed;
+    22→    bottom: 16px;
+    23→    left: 50%;
+    24→    transform: translateX(-50%);
+    25→    z-index: 10;
+    26→    background: rgba(0, 0, 0, 0.55);
+    27→    backdrop-filter: blur(8px);
+    28→    border: 1px solid rgba(255, 255, 255, 0.15);
+    29→    border-radius: 10px;
+    30→    padding: 10px 18px;
+    31→    font-size: 13px;
+    32→    line-height: 1.7;
+    33→    white-space: nowrap;
+    34→    text-align: center;
+    35→    max-width: calc(100vw - 24px);
+    36→    overflow: hidden;
+    37→    user-select: none;
+    38→    pointer-events: none;
+    39→  }
+    40→  #hud b { color: #fff; font-weight: 600; }
+    41→  #hud .key {
+    42→    display: inline-block;
+    43→    background: rgba(255, 255, 255, 0.12);
+    44→    border: 1px solid rgba(255, 255, 255, 0.25);
+    45→    border-radius: 4px;
+    46→    padding: 1px 6px;
+    47→    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    48→    font-size: 11px;
+    49→    color: #fff;
+    50→  }
+    51→  #title {
+    52→    position: fixed;
+    53→    top: 20px;
+    54→    left: 24px;
+    55→    z-index: 10;
+    56→    font-size: 13px;
+    57→    letter-spacing: 0.18em;
+    58→    text-transform: uppercase;
+    59→    color: rgba(255, 255, 255, 0.7);
+    60→    user-select: none;
+    61→    pointer-events: none;
+    62→    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    63→  }
+    64→  #fps {
+    65→    position: fixed;
+    66→    top: 20px;
+    67→    right: 24px;
+    68→    z-index: 10;
+    69→    font-size: 12px;
+    70→    color: rgba(255, 255, 255, 0.6);
+    71→    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    72→    user-select: none;
+    73→    pointer-events: none;
+    74→  }
+    75→  #zoom {
+    76→    position: fixed;
+    77→    top: 42px;
+    78→    right: 24px;
+    79→    z-index: 10;
+    80→    font-size: 12px;
+    81→    color: rgba(255, 255, 255, 0.6);
+    82→    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    83→    user-select: none;
+    84→    pointer-events: none;
+    85→  }
+    86→</style>
+    87→</head>
+    88→<body>
+    89→<canvas id="gl"></canvas>
+    90→<div id="title">Demo Intro v2 — WebGL Preview</div>
+    91→<div id="fps">FPS: --</div>
+    92→<div id="zoom">Zoom: 1.00x</div>
+    93→<div id="hud">
+    94→  <b>Морфинг 9 фигур:</b> сфера → куб → тор → октаэдр → треугольник → конус → капсула → чайник → додекаэдр · стекло <b>D E M O</b><br>
+    95→  <span class="key">ЛКМ</span> вращение · <span class="key">SPACE</span> пауза · <span class="key">R</span> slow-mo · <span class="key">T</span> тонмаппинг · <span class="key">WHEEL</span>/<span class="key">+</span><span class="key">-</span> зум · <span class="key">0</span> сброс · <span class="key">D</span> капли
+    96→</div>
+    97→
+    98→<script id="vertex-shader" type="x-shader/x-vertex">#version 300 es
+    99→// Вершинный шейдер: генерируем fullscreen quad из gl_VertexID.
+   100→// Никакого VBO не нужно — это классический демосценовский приём.
+   101→void main() {
+   102→    vec2 positions[4] = vec2[4](
+   103→        vec2(-1.0, -1.0),
+   104→        vec2( 1.0, -1.0),
+   105→        vec2(-1.0,  1.0),
+   106→        vec2( 1.0,  1.0)
+   107→    );
+   108→    gl_Position = vec4(positions[gl_VertexID], 0.0, 1.0);
+   109→}
+   110→</script>
+   111→
+   112→<script id="fragment-shader" type="x-shader/x-fragment">#version 300 es
+   113→// Тот же фрагментный шейдер, что и в shaders.h.
+   114→// Адаптация под WebGL2: добавлены precision, out vec4 вместо named output.
+   115→
+   116→precision highp float;
+   117→precision highp int;
+   118→
+   119→uniform float uTime;
+   120→uniform vec2  uResolution;
+   121→uniform float uZoom;       // коэффициент зума: >1 — ближе, <1 — дальше
+   122→uniform vec2  uMouseRot;   // вращение мышью (drag ЛКМ): .x = yaw, .y = pitch
+   123→
+   124→const float PI  = 3.14159265359;
+   125→const float TAU = 6.28318530718;
+   126→
+   127→// --- НОВАЯ ПАЛИТРА: неоновая магента-циан-лайм ---
+   128→// Палитра в стиле кибер-синтвейв: насыщенные пурпурные, циан и лайм.
+   129→vec3 Palette(float t) {
+   130→    vec3 a = vec3(0.5, 0.5, 0.5);    // базовая яркость
+   131→    vec3 b = vec3(0.5, 0.5, 0.5);    // амплитуда
+   132→    vec3 c = vec3(2.0, 1.0, 1.5);    // разная частота по каналам — больше "переливов"
+   133→    vec3 d = vec3(0.0, 0.25, 0.5);   // сдвиг: даёт магента-циан-лайм
+   134→    return a + b * cos(TAU * (c * t + d));
+   135→}
+   136→
+   137→mat2 Rot2D(float angle) {
+   138→    float s = sin(angle);
+   139→    float c = cos(angle);
+   140→    return mat2(c, -s, s, c);
+   141→}
+   142→
+   143→float sdSphere(vec3 p, float r) { return length(p) - r; }
+   144→
+   145→float sdBox(vec3 p, vec3 b) {
+   146→    vec3 q = abs(p) - b;
+   147→    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+   148→}
+   149→
+   150→float sdTorus(vec3 p, float R, float r) {
+   151→    vec2 q = vec2(length(p.xz) - R, p.y);
+   152→    return length(q) - r;
+   153→}
+   154→
+   155→float sdOctahedron(vec3 p, float r) {
+   156→    p = abs(p);
+   157→    return (p.x + p.y + p.z - r) * 0.57735027;
+   158→}
+   159→
+   160→// НОВАЯ ФИГУРА: треугольная призма («треугольник»).
+   161→// Равносторонний треугольник вершиной вверх (+Y), выдавленный по Z:
+   162→// h.x — радиус описанной окружности (масштаб), h.y — половина толщины.
+   163→// Вершина треугольника лежит в точке (0, h.x, 0) — при h.x = 1 она
+   164→// совпадает с верхней вершиной октаэдра и с вершиной конуса, поэтому
+   165→// переходы октаэдр → призма → конус держат «острую» верхнюю точку
+   166→// на месте, и морфинг выглядит плавнее, чем прямой октаэдр → конус.
+   167→float sdTriPrism(vec3 p, vec2 h) {
+   168→    vec3 q = abs(p);
+   169→    float d1 = q.z - h.y;
+   170→    float d2 = max(q.x * 0.866025 + p.y * 0.5, -p.y) - h.x * 0.5;
+   171→    return length(max(vec2(d1, d2), 0.0)) + min(max(d1, d2), 0.0);
+   172→}
+   173→
+   174→// НОВАЯ ФИГУРА: круговой конус.
+   175→// Высотой h (по оси y), радиус основания r в плоскости y=0.
+   176→// ФИКС: прежняя формула (k1/k2/s/ca/cb) возвращала мусорный знак —
+   177→// «минус» снаружи конуса и «плюс» внутри. Пока конус был 5-й фигурой,
+   178→// это маскировалось соседями в mix() и «удачными» углами вращения;
+   179→// после сдвига фаз (вставка треугольника после октаэдра) конус стал
+   180→// чистым при t=20..24, и лучи, проходившие через дефектный сектор,
+   181→// «застревали внутри»: кадр заливало пустым цветом фона или гигантской
+   182→// массой. Новое тело — осесимметричное пересечение двух полуплоскостей
+   183→// (боковая грань + основание): знак верен во всём пространстве,
+   184→// расстояние точно на гранях и слегка занижено у апекса (безопасно).
+   185→float sdCone(vec3 p, float h, float r) {
+   186→    vec2 q = vec2(length(p.xz), p.y);
+   187→    float d_side = (q.x * h + q.y * r - h * r) / sqrt(h * h + r * r);
+   188→    float d_base = -q.y;
+   189→    return max(d_base, d_side);
+   190→}
+   191→
+   192→// НОВАЯ ФИГУРА: капсула между двумя точками a и b радиусом r.
+   193→float sdCapsule(vec3 p, vec3 a, vec3 b, float r) {
+   194→    vec3 pa = p - a;
+   195→    vec3 ba = b - a;
+   196→    float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+   197→    return length(pa - ba * h) - r;
+   198→}
+   199→
+   200→// Плавное слияние (polynomial smooth min) — нужно для морфинга фигур
+   201→// и для объединения частей составных SDF (например, чайника).
+   202→// Защита от k=0: при делении на 0 в формуле возникает NaN, поэтому
+   203→// clamp k к минимальному значению — при этом smin плавно вырождается
+   204→// в обычный min(a,b), что и нужно для "чистой" фигуры (frac_=0).
+   205→float smin(float a, float b, float k) {
+   206→    float kk = max(k, 0.005);
+   207→    float h = clamp(0.5 + 0.5 * (b - a) / kk, 0.0, 1.0);
+   208→    return mix(b, a, h) - kk * h * (1.0 - h);
+   209→}
+   210→
+   211→// НОВАЯ ФИГУРА: упрощённый Utah Teapot (чайник).
+   212→// Композиция из 5 частей:
+   213→//   * Тело — сплюснутая по Y сфера («пузико»)
+   214→//   * Крышка — маленькая сфера сверху
+   215→//   * Пимпочка — малюсенькая сфера на крышке (ручка для снятия)
+   216→//   * Носик — капсула, идущая от тела наружу и вверх
+   217→//   * Ручка — вертикальный тор (получается через swizzle .xzy на sdTorus)
+   218→float sdTeapot(vec3 p) {
+   219→    // --- Тело: сплюснутая сфера ---
+   220→    // Деление y на 1.3 вытягивает сферу по вертикали — «пузико».
+   221→    vec3 bodyP = p;
+   222→    bodyP.y /= 1.3;
+   223→    float body = sdSphere(bodyP, 0.5);
+   224→
+   225→    // --- Крышка: маленькая сфера сверху ---
+   226→    float lid = sdSphere(p - vec3(0.0, 0.65, 0.0), 0.10);
+   227→
+   228→    // --- Пимпочка на крышке ---
+   229→    float knob = sdSphere(p - vec3(0.0, 0.78, 0.0), 0.04);
+   230→
+   231→    // --- Носик: капсула от (0.4, 0.05, 0) до (0.85, 0.45, 0) ---
+   232→    // Идёт от тела вверх и в сторону — характерный «клювик» чайника.
+   233→    float spout = sdCapsule(p, vec3(0.40, 0.05, 0.0), vec3(0.85, 0.45, 0.0), 0.07);
+   234→
+   235→    // --- Ручка: вертикальный тор с другой стороны ---
+   236→    // sdTorus в нашем коде лежит в плоскости XZ (горизонтальный).
+   237→    // Свизл .xzy меняет местами Y и Z, превращая горизонтальный тор
+   238→    // в вертикальный (в плоскости XY).
+   239→    vec3 handleP = (p - vec3(-0.45, 0.15, 0.0)).xzy;
+   240→    float handle = sdTorus(handleP, 0.20, 0.04);
+   241→
+   242→    // Объединяем все части через smin — даёт мягкое слияние швов.
+   243→    float d = body;
+   244→    d = smin(d, spout, 0.04);
+   245→    d = smin(d, handle, 0.04);
+   246→    d = smin(d, lid, 0.05);
+   247→    d = smin(d, knob, 0.02);
+   248→
+   249→    return d;
+   250→}
+   251→
+   252→// НОВАЯ ФИГУРА: додекаэдр (12-гранник — платоново тело).
+   253→// Грани ориентированы вдоль направлений (0, ±1, ±φ), (±1, ±φ, 0), (±φ, 0, ±1),
+   254→// где φ — золотое сечение. Для симметричного тела достаточно 6 осей
+   255→// (по паре противоположных граней), используем abs(dot) — 6 dot вместо 12.
+   256→float sdDodecahedron(vec3 p, float r) {
+   257→    const float PHI  = 1.61803398875;    // золотое сечение
+   258→    const float NORM = 0.525731112119134; // 1/sqrt(1 + φ²) — нормализация
+   259→
+   260→    // 6 уникальных осей додекаэдра (каждая покрывает 2 противоположные грани).
+   261→    float d1 = abs(dot(p, vec3(0.0, 1.0,  PHI) * NORM));
+   262→    float d2 = abs(dot(p, vec3(0.0, 1.0, -PHI) * NORM));
+   263→    float d3 = abs(dot(p, vec3(1.0,  PHI, 0.0) * NORM));
+   264→    float d4 = abs(dot(p, vec3(1.0, -PHI, 0.0) * NORM));
+   265→    float d5 = abs(dot(p, vec3(PHI, 0.0, 1.0)  * NORM));
+   266→    float d6 = abs(dot(p, vec3(PHI, 0.0, -1.0) * NORM));
+   267→
+   268→    // SDF выпуклого многогранника = max по всем полуплоскостям.
+   269→    float d = max(max(d1, d2), max(d3, d4));
+   270→    d = max(d, max(d5, d6));
+   271→    return d - r;
+   272→}
+   273→
+   274→// --- Идентификаторы материалов ----------------------------------------
+   275→// Что вернул RayMarch: 0 — мимо, 1 — основная фигура, 2.x — частица с ID x.
+   276→const float MAT_NONE     = 0.0;
+   277→const float MAT_MAIN     = 1.0;
+   278→const float MAT_PARTICLE = 2.0;  // + pid * 0.1 кодирует ID частицы
+   279→const float MAT_LETTER   = 3.0;  // + lid * 0.1 кодирует ID буквы (0=D, 1=E, 2=M, 3=O)
+   280→
+   281→// --- Стеклянные буквы D, E, M, O ---------------------------------------
+   282→// Позиции центров задаёт CPU (JS/C++): физика полёта, столкновения и
+   283→// границы считаются на хосте и приходят как uniform-массив (у шейдера
+   284→// нет состояния между кадрами). Ориентация (плавное покачивание)
+   285→// считается в шейдере от uTime — на паузе буквы замирают со сценой.
+   286→uniform vec3 uLetterPos[4];
+   287→const float LETTER_SCALE = 0.2;  // полувысота глифа = 2.5 × средний радиус частицы (0.08)
+   288→const float LETTER_DEPTH = 0.07; // полутолщина стеклянной плиты
+   289→
+   290→// Хеш-функция для "случайного характера" каждой частицы.
+   291→// Возвращает псевдослучайное число в [0, 1) по целочисленному ключу.
+   292→float hash(float n) {
+   293→    return fract(sin(n * 12.9898) * 43758.5453);
+   294→}
+   295→
+   296→// --- Глобальные переменные для оптимизации ---------------------------
+   297→// Матрицы вращения вычисляются ОДИН РАЗ в RenderScene (перед raymarch),
+   298→// а не в каждом вызове MapScene (который вызывается ~60 раз на пиксель
+   299→// в raymarching + ещё 6 раз в CalcNormal). Это устраняет ~6 sin/cos
+   300→// вызовов на КАЖДЫЙ вызов MapScene — существенное ускорение.
+   301→mat2 gRotXZ = mat2(1.0);
+   302→mat2 gRotYZ = mat2(1.0);
+   303→mat2 gRotXY = mat2(1.0);
+   304→
+   305→// Вращение мышью (drag ЛКМ). Применяется ПЕРВЫМ (снаружи всех остальных
+   306→// поворотов), поэтому оси вращения всегда выровнены по экрану: тянем
+   307→// вправо — фигура крутится как глобус вправо, независимо от её
+   308→// собственного кувыркания от time-анимации.
+   309→mat2 gRotMouseYaw   = mat2(1.0);
+   310→mat2 gRotMousePitch = mat2(1.0);
+   311→
+   312→// ОПТИМИЗАЦИЯ 6: precompute позиции и радиусы частиц.
+   313→// Раньше для каждой из 8 частиц вычислялись sin/cos на КАЖДЫЙ вызов
+   314→// MapScene (60 шагов raymarch × 8 частиц × 3 sin/cos = ~1440 sin/cos
+   315→// на пиксель!). Теперь вычисляются один раз в RenderScene.
+   316→vec3 gParticlePos[8];
+   317→float gParticleRad[8];
+   318→
+   319→// БАЗОВАЯ SDF-сцена (фигура + частицы, без букв). Возвращает vec2:
+   320→//   .x = расстояние (для raymarching)
+   321→//   .y = material ID (что ближе к точке — фигура или конкретная частица)
+   322→// Используется напрямую мини-маршем LetterBehind («просвет» сквозь стекло
+   323→// букв) — так в GLSL обходится запрет на рекурсию функций.
+   324→vec2 MapSceneBase(vec3 p) {
+   325→    float t = uTime;
+   326→
+   327→    // Вращение мышью (drag ЛКМ) — внешнее преобразование поверх
+   328→    // time-анимации. Работает и на паузе: сдвигает всю сцену (фигуру
+   329→    // и частицы) как единое целое, фон и звёзды остаются на месте.
+   330→    p.xz = gRotMouseYaw * p.xz;
+   331→    p.yz = gRotMousePitch * p.yz;
+   332→
+   333→    // Поворот камеры (точки) в нескольких плоскостях — фигура вертится.
+   334→    // Используем предвычисленные глобальные матрицы (см. RenderScene).
+   335→    p.xz = gRotXZ * p.xz;
+   336→    p.yz = gRotYZ * p.yz;
+   337→    p.xy = gRotXY * p.xy;
+   338→
+   339→    // Параметр морфинга: 9 фигур = 9 фаз по кругу.
+   340→    float phase = mod(t * 0.25, 9.0);
+   341→
+   342→    float d1 = sdSphere       (p, 1.0);
+   343→    float d2 = sdBox          (p, vec3(0.85));
+   344→    float d3 = sdTorus        (p, 0.8, 0.3);
+   345→    float d4 = sdOctahedron   (p, 1.0);
+   346→    float d5 = sdTriPrism     (p, vec2(1.0, 0.5));  // треугольник (новый)
+   347→    float d6 = sdCone         (p, 1.0, 0.9);
+   348→    float d7 = sdCapsule      (p, vec3(-0.8, -0.6, 0.0), vec3(0.8, 0.6, 0.0), 0.35);
+   349→    float d8 = sdTeapot       (p);
+   350→    float d9 = sdDodecahedron (p, 1.0);   // додекаэдр
+   351→
+   352→    // Выбираем пару соседних фигур и плавно смешиваем между ними.
+   353→    float idx   = floor(phase);
+   354→    float frac_ = smoothstep(0.0, 1.0, phase - idx);
+   355→
+   356→    // Используем mix() для интерполяции SDF — это даёт прямой переход
+   357→    // между формами, и при frac_=0/1 мы видим чистую фигуру.
+   358→    // (smin с k=0 не подходит: он вырождается в min(a,b), а когда одна
+   359→    //  фигура содержит другую — например сфера r=1 содержит чайник r=0.5 —
+   360→    //  всегда выбирается внешняя, и мы видим её вместо целевой.)
+   361→
+   362→    float d_main;
+   363→    if      (idx < 0.5) d_main = mix(d1, d2, frac_);   // сфера → куб
+   364→    else if (idx < 1.5) d_main = mix(d2, d3, frac_);   // куб → тор
+   365→    else if (idx < 2.5) d_main = mix(d3, d4, frac_);   // тор → октаэдр
+   366→    else if (idx < 3.5) d_main = mix(d4, d5, frac_);   // октаэдр → треугольник
+   367→    else if (idx < 4.5) d_main = mix(d5, d6, frac_);   // треугольник → конус
+   368→    else if (idx < 5.5) d_main = mix(d6, d7, frac_);   // конус → капсула
+   369→    else if (idx < 6.5) d_main = mix(d7, d8, frac_);   // капсула → чайник
+   370→    else if (idx < 7.5) d_main = mix(d8, d9, frac_);   // чайник → додекаэдр
+   371→    else                d_main = mix(d9, d1, frac_);   // додекаэдр → сфера (петля)
+   372→
+   373→    // --- ОБЪЁМНЫЕ ЧАСТИЦЫ ---
+   374→    // ОПТИМИЗАЦИЯ 6: позиции/радиусы частиц берутся из предвычисленных
+   375→    // глобальных массивов (см. RenderScene) — вместо 16 sin/cos на каждый
+   376→    // вызов MapScene.
+   377→    float d_part = 1e9;
+   378→    float pid_nearest = 0.0;
+   379→    for (int i = 0; i < 8; i++) {
+   380→        float ds = sdSphere(p - gParticlePos[i], gParticleRad[i]);
+   381→        if (ds < d_part) {
+   382→            d_part = ds;
+   383→            pid_nearest = float(i);
+   384→        }
+   385→    }
+   386→
+   387→    // SDF-объединение (smin) для плавного визуального слияния.
+   388→    float d_combined = smin(d_main, d_part, 0.15);
+   389→
+   390→    // Материал: что ближе к точке — основная фигура или ближайшая частица.
+   391→    // (Если d_main < d_part — мы «внутри» основной фигуры, иначе — частицы.)
+   392→    float matID = (d_main < d_part)
+   393→        ? MAT_MAIN
+   394→        : MAT_PARTICLE + pid_nearest * 0.1;
+   395→
+   396→    return vec2(d_combined, matID);
+   397→}
+   398→
+   399→// --- Стеклянные буквы: SDF ---------------------------------------------
+   400→// 2D-расстояние до отрезка (скелет штриха; толщина вычитается ОДИН раз
+   401→// в sdLetterGlyph — поэтому min() скелетов корректно даёт SDF штрихового
+   402→// шрифта).
+   403→float sdSeg2(vec2 p, vec2 a, vec2 b) {
+   404→    vec2 pa = p - a, ba = b - a;
+   405→    float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+   406→    return length(pa - ba * h);
+   407→}
+   408→
+   409→// Глиф буквы в ЕДИНИЧНОМ масштабе (скелет полувысоты 0.7, штрих 0.3),
+   410→// выдавленный по Z в мировые размеры. which: 0=D, 1=E, 2=M, 3=O.
+   411→float sdLetterGlyph(vec3 p, float which) {
+   412→    vec2 q = p.xy;
+   413→    const float w = 0.30;   // полуширина штриха (в единичном масштабе)
+   414→    float d;
+   415→    if (which < 0.5) {
+   416→        // D — вертикальный штрих + правая половина кольца («чаша»)
+   417→        d = sdSeg2(q, vec2(-0.55, -0.7), vec2(-0.55, 0.7));
+   418→        vec2 br = vec2(max(q.x + 0.55, 0.0), q.y);
+   419→        d = min(d, abs(length(br) - 0.7));
+   420→    } else if (which < 1.5) {
+   421→        // E — спина + три горизонтальных штриха
+   422→        d = sdSeg2(q, vec2(-0.55, -0.7), vec2(-0.55, 0.7));
+   423→        d = min(d, sdSeg2(q, vec2(-0.55,  0.7), vec2( 0.55,  0.7)));
+   424→        d = min(d, sdSeg2(q, vec2(-0.55,  0.0), vec2( 0.35,  0.0)));
+   425→        d = min(d, sdSeg2(q, vec2(-0.55, -0.7), vec2( 0.55, -0.7)));
+   426→    } else if (which < 2.5) {
+   427→        // M — две спины + диагонали к центру
+   428→        d = sdSeg2(q, vec2(-0.7, -0.7), vec2(-0.7, 0.7));
+   429→        d = min(d, sdSeg2(q, vec2( 0.7, -0.7), vec2( 0.7, 0.7)));
+   430→        d = min(d, sdSeg2(q, vec2(-0.7,  0.7), vec2( 0.0, 0.05)));
+   431→        d = min(d, sdSeg2(q, vec2( 0.7,  0.7), vec2( 0.0, 0.05)));
+   432→    } else {
+   433→        // O — кольцо
+   434→        d = abs(length(q) - 0.7);
+   435→    }
+   436→    float d2 = (d - w) * LETTER_SCALE;          // штрих + перевод в мировые единицы
+   437→    return max(d2, abs(p.z) - LETTER_DEPTH);    // выдавливание в стеклянную плиту
+   438→}
+   439→
+   440→// Главная SDF-сцена. Возвращает vec2 (.x расстояние, .y material ID).
+   441→// = базовая сцена (MapSceneBase) + 4 стеклянные буквы D/E/M/O.
+   442→// Буквы живут в «экранных» координатах: к ним применяется только мышиный
+   443→// глобус (drag вращает и их), а time-кувыркание базовой сцены на них не
+   444→// действует — они летают независимо, и их физический бокс границ
+   445→// совпадает с границами кадра.
+   446→vec2 MapScene(vec3 p) {
+   447→    vec2 base = MapSceneBase(p);
+   448→
+   449→    float dL = 1e9;
+   450→    float lidx = 0.0;
+   451→    for (int i = 0; i < 4; i++) {
+   452→        vec3 lp = p - uLetterPos[i];
+   453→        if (dot(lp, lp) > 0.16) continue;   // bounding sphere r=0.4 — дешёвый отсев
+   454→        // мышиный глобус — общий со всей сценой
+   455→        lp.xz = gRotMouseYaw * lp.xz;
+   456→        lp.yz = gRotMousePitch * lp.yz;
+   457→        // плавное покачивание от uTime (на паузе замирает)
+   458→        float fi = float(i);
+   459→        lp.xz = Rot2D(0.28 * sin(uTime * 0.37 + fi * 1.9 + 0.8)) * lp.xz;
+   460→        lp.xy = Rot2D(0.24 * sin(uTime * 0.29 + fi * 2.6)) * lp.xy;
+   461→        float dl = sdLetterGlyph(lp, fi);
+   462→        if (dl < dL) { dL = dl; lidx = fi; }
+   463→    }
+   464→
+   465→    if (dL < base.x) {
+   466→        return vec2(dL, MAT_LETTER + lidx * 0.1);
+   467→    }
+   468→    return base;
+   469→}
+   470→
+   471→// CalcNormal через tetrahedron trick — вместо 6 вызовов MapScene
+   472→// (3 оси × 2 стороны) используем 4 вызова по вершинам тетраэдра.
+   473→// ОПТИМИЗАЦИЯ 7: экономия 33% на расчёте нормали.
+   474→vec3 CalcNormal(vec3 p) {
+   475→    const vec2 k = vec2(1.0, -1.0);
+   476→    const float e = 0.001;
+   477→    return normalize(
+   478→        k.xyy * MapScene(p + k.xyy * e).x +
+   479→        k.yyx * MapScene(p + k.yyx * e).x +
+   480→        k.yxy * MapScene(p + k.yxy * e).x +
+   481→        k.xxx * MapScene(p + k.xxx * e).x
+   482→    );
+   483→}
+   484→
+   485→// RayMarch возвращает vec2(distance, materialID).
+   486→vec2 RayMarch(vec3 ro, vec3 rd) {
+   487→    float t = 0.0;
+   488→    const int steps = 60;   // ОПТИМИЗАЦИЯ 3: 80 → 60 (на ~25% быстрее raymarch)
+   489→    const float maxDist = 50.0;
+   490→
+   491→    for (int i = 0; i < steps; i++) {
+   492→        vec3 p = ro + rd * t;
+   493→        vec2 hit = MapScene(p);
+   494→        if (hit.x < 0.001) return vec2(t, hit.y);
+   495→        if (t > maxDist) return vec2(-1.0, MAT_NONE);
+   496→        t += hit.x;
+   497→    }
+   498→    return vec2(-1.0, MAT_NONE);
+   499→}
+   500→
+   501→// ОПТИМИЗАЦИЯ 8: RayMarchCoarse — облегчённая версия (30 шагов) для
+   502→// преломлённого прохода капель. Преломлённое изображение видно только
+   503→// внутри капель (маленькая область экрана), точность там не критична —
+   504→// можно сэкономить 50% времени.
+   505→vec2 RayMarchCoarse(vec3 ro, vec3 rd) {
+   506→    float t = 0.0;
+   507→    const int steps = 30;   // вдвое меньше шагов
+   508→    const float maxDist = 50.0;
+   509→
+   510→    for (int i = 0; i < steps; i++) {
+   511→        vec3 p = ro + rd * t;
+   512→        vec2 hit = MapScene(p);
+   513→        if (hit.x < 0.002) return vec2(t, hit.y);  // чуть более "грубый" порог
+   514→        if (t > maxDist) return vec2(-1.0, MAT_NONE);
+   515→        t += hit.x * 1.2;  // чуть больше шаг для быстрого прохождения
+   516→    }
+   517→    return vec2(-1.0, MAT_NONE);
+   518→}
+   519→
+   520→float StarField(vec3 dir) {
+   521→    vec3 p = dir * 8.0;
+   522→    vec3 id = floor(p);
+   523→    vec3 f = fract(p) - 0.5;
+   524→
+   525→    // ОПТИМИЗАЦИЯ 9: одна hash вместо двух — упрощённый псевдослучайный
+   526→    // фактор, основанный на сумме компонент (визуально похоже, дешевле).
+   527→    float rnd = fract(sin(dot(id, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+   528→
+   529→    float d = length(f);
+   530→    float star = smoothstep(0.5, 0.0, d) * rnd;
+   531→
+   532→    // Мерцание — sin уже есть, один вызов.
+   533→    star *= 0.6 + 0.4 * sin(uTime * 3.0 + rnd * 100.0);
+   534→
+   535→    return star * 0.7;
+   536→}
+   537→
+   538→out vec4 FragColor;
+   539→
+   540→uniform int uApplyToneMap;  // 1 = включить ACES, 0 = без тонмаппинга (для отладки)
+   541→uniform int uDroplets;       // 1 = включить эффект стекающих капель, 0 = выкл
+   542→
+   543→// --- Эффект стекающих по экрану капель ---------------------------------
+   544→// Возвращает vec4:
+   545→//   .xy = смещение UV для преломления
+   546→//   .z  = "мокрость" 0..1 (влияет на силу преломления)
+   547→//   .w  = 1 если пиксель в активной капле (нужен spec-блик),
+   548→//         0 если в trail или в мокром пути
+   549→vec4 DropletEffect(vec2 screenUV) {
+   550→    // screenUV — в диапазоне [0..1] по обеим осям (без aspect-correction).
+   551→
+   552→    vec2 refractOffset = vec2(0.0);
+   553→    float wetness = 0.0;
+   554→    float isActiveDrop = 0.0;
+   555→
+   556→    // 12 капель, детерминированно распределённых по экрану.
+   557→    // ОПТИМИЗАЦИЯ 4: 5 hash → 2 hash на каплю через переиспользование
+   558→    // одного сид-значения для разных параметров.
+   559→    for (int i = 0; i < 12; i++) {
+   560→        float fi = float(i);
+   561→        // Один master-hash, остальные параметры — простые арифметические
+   562→        // функции от него (вместо отдельных hash-вызовов).
+   563→        float h1 = hash(fi * 7.1 + 0.5);                 // основной сид
+   564→        float h2 = hash(fi * 3.7 + 1.9);                  // второй сид
+   565→
+   566→        float seedX  = h1;                                 // X-позиция
+   567→        float speed  = 0.05 + 0.12 * h2;                   // скорость
+   568→        float radius = 0.005 + 0.005 * fract(h1 * 3.0);    // радиус (fract от производной)
+   569→        float trailL = 0.02 + 0.06 * fract(h2 * 2.0);      // длина следа
+   570→        float xJitter = (h1 - 0.5) * 0.0025;               // дрожание (уже есть h1)
+   571→        float wetPathLen = 0.25 + 0.25 * fract(h2 * 5.0);  // длина мокрого пути
+   572→
+   573→        // Капля движется сверху вниз, зацикливаясь через y = 1.2 → -0.1.
+   574→        // Скорость нелинейная — капля ускоряется к низу (имитация гравитации).
+   575→        float cyc = mod(uTime * speed + fi * 0.13, 1.2) - 0.1;  // y в [-0.1, 1.1]
+   576→        // Чем ниже капля — тем быстрее (как настоящая капля под gravity).
+   577→        float y = cyc * (0.7 + 0.6 * cyc);
+   578→
+   579→        vec2 dropPos = vec2(seedX + xJitter, y);
+   580→        vec2 toDrop = screenUV - dropPos;
+   581→
+   582→        // 1. КРУГЛАЯ КАПЛЯ (активная) — основная вода.
+   583→        float distSq = dot(toDrop, toDrop);
+   584→        if (distSq < radius * radius) {
+   585→            float dist = sqrt(distSq);
+   586→            // Сила преломления — максимум в центре, спадает к краю.
+   587→            float strength = 1.0 - dist / radius;     // 0..1
+   588→            // Направление от центра капли + лёгкое смещение вверх (линза).
+   589→            vec2 dir = toDrop / max(dist, 0.0001);
+   590→            refractOffset = dir * strength * 0.04 + vec2(0.0, -strength * 0.015);
+   591→            wetness = 1.0;
+   592→            isActiveDrop = 1.0;
+   593→            break;  // активная капля перекрывает все остальные эффекты
+   594→        }
+   595→
+   596→        // 2. TRAIL — короткий след прямо под каплей (где вода стекает).
+   597→        if (abs(toDrop.x) < radius * 0.55 && toDrop.y > 0.0 && toDrop.y < trailL) {
+   598→            float trailStrength = (1.0 - toDrop.y / trailL) * 0.35;
+   599→            vec2 trailOffset = vec2(0.0, -toDrop.y / trailL * 0.025);
+   600→            if (trailStrength > wetness) {
+   601→                wetness = trailStrength;
+   602→                refractOffset = trailOffset;
+   603→                isActiveDrop = 0.0;
+   604→            }
+   605→        }
+   606→
+   607→        // 3. МОКРЫЙ ПУТЬ — длинный след ОТ СТАРТА КАПЛИ до её текущей позиции.
+   608→        // Это вода, оставшаяся на стекле после прохождения капли. Со временем
+   609→        // испаряется (экспоненциальное затухание по расстоянию от капли).
+   610→        // toDrop.y < 0 — пиксель ВЫШЕ капли (capля прошла через него ранее).
+   611→        if (toDrop.y < 0.0) {
+   612→            float verticalDist = -toDrop.y;  // насколько давно прошла капля
+   613→            if (verticalDist < wetPathLen) {
+   614→                // Шумная ширина — края не ровные, а с волнами (как на настоящем стекле).
+   615→                // ОПТИМИЗАЦИЯ: используем h2 вместо отдельного hash вызова.
+   616→                float waveAmp  = 0.4 + 0.3 * fract(h2 * 7.0);
+   617→                float wetWidth = radius * (0.9 + waveAmp * sin(verticalDist * 40.0 + fi * 2.0));
+   618→
+   619→                if (abs(toDrop.x) < wetWidth) {
+   620→                    // Мокрота экспоненциально убывает с расстоянием (испарение).
+   621→                    float distNorm = verticalDist / wetPathLen;
+   622→                    float wetStrength = exp(-distNorm * 2.5) * 0.30;
+   623→                    // Боковое затухание — края слабее центра.
+   624→                    float edgeFalloff = 1.0 - abs(toDrop.x) / wetWidth;
+   625→                    wetStrength *= edgeFalloff;
+   626→
+   627→                    // Слабое преломление — вверх + лёгкий шумный X.
+   628→                    // Это создаёт эффект "глянцевой водяной плёнки" на стекле.
+   629→                    vec2 wetOffset = vec2(
+   630→                        (hash(fi * 23.1 + floor(verticalDist * 20.0)) - 0.5) * 0.008,
+   631→                        -verticalDist * 0.008
+   632→                    );
+   633→
+   634→                    if (wetStrength > wetness) {
+   635→                        wetness = wetStrength;
+   636→                        refractOffset = wetOffset;
+   637→                        isActiveDrop = 0.0;
+   638→                    }
+   639→                }
+   640→            }
+   641→        }
+   642→    }
+   643→
+   644→    return vec4(refractOffset, wetness, isActiveDrop);
+   645→}
+   646→
+   647→// --- «Просвет» сквозь стеклянную букву ---------------------------------
+   648→// Мини-марш сцены ПОЗАДИ стекла: только MapSceneBase (фигура + частицы),
+   649→// БЕЗ букв — иначе получилась бы взаимная рекурсия функций (в GLSL
+   650→// запрещена). Шагов мало, шейдинг упрощённый: вызывается только для
+   651→// пикселей внутри стеклянных букв.
+   652→vec3 LetterBehind(vec3 ro, vec3 rd) {
+   653→    float t = 0.05;
+   654→    for (int i = 0; i < 24; i++) {
+   655→        vec3 p = ro + rd * t;
+   656→        vec2 h = MapSceneBase(p);
+   657→        if (h.x < 0.004) {
+   658→            vec3 n = CalcNormal(p);
+   659→            vec3 lightDir = normalize(vec3(sin(uTime * 0.7), 0.8, cos(uTime * 0.7)));
+   660→            float diff = max(dot(n, lightDir), 0.0);
+   661→            vec3 objCol = Palette(p.x * 0.5 + p.y * 0.3 + p.z * 0.2 + uTime * 0.1);
+   662→            return objCol * (0.35 + diff * 0.75);
+   663→        }
+   664→        t += h.x * 0.9;
+   665→        if (t > 7.0) break;
+   666→    }
+   667→    // Мимо всего — фон: градиентное небо + звёзды (как в основном проходе).
+   668→    float g = 0.5 + 0.5 * rd.y;
+   669→    vec3 bg = mix(Palette(uTime * 0.05 + 0.4), Palette(uTime * 0.05 + 0.0), g) * 0.6;
+   670→    bg += vec3(StarField(rd));
+   671→    return bg;
+   672→}
+   673→
+   674→// --- Основная функция рендера сцены (внутренняя) ----------------------
+   675→// Принимает UV (в диапазоне [-1..1] по X с учётом aspect ratio) и флаг
+   676→// качества: isCoarse=true использует RayMarchCoarse (30 шагов) вместо
+   677→// полного RayMarch (60 шагов) — для преломлённого прохода капель, где
+   678→// точность не критична.
+   679→// Возвращает ЛИНЕЙНЫЙ цвет пикселя (без тонмаппинга и гаммы —
+   680→// это важно: преломление должно делаться в линейном пространстве).
+   681→vec3 RenderSceneInner(vec2 uv, bool isCoarse) {
+   682→    // --- ОПТИМИЗАЦИЯ 1: предвычисление матриц вращения ---
+   683→    // Вычисляем Rot2D матрицы один раз, а не в каждом вызове MapScene.
+   684→    // MapScene вызывается ~80 раз в raymarch + 6 раз в CalcNormal:
+   685→    // экономим ~500 sin/cos вызовов на пиксель.
+   686→    gRotXZ = Rot2D(uTime * 0.5);
+   687→    gRotYZ = Rot2D(uTime * 0.3);
+   688→    gRotXY = Rot2D(uTime * 0.2);
+   689→
+   690→    // Матрицы вращения мышью. Строим ТРАНСПОНИРОВАННУЮ матрицу: MapScene
+   691→    // вращает точку запроса (а не объект), поэтому визуальный поворот
+   692→    // фигуры — это обратная матрица. Транспонирование = обратная для
+   693→    // ортогональной матрицы вращения. Результат — эффект «вращаю глобус
+   694→    // рукой»: тянешь вправо — передняя грань уходит вправо.
+   695→    float cy = cos(uMouseRot.x);
+   696→    float sy = sin(uMouseRot.x);
+   697→    float cp = cos(uMouseRot.y);
+   698→    float sp = sin(uMouseRot.y);
+   699→    gRotMouseYaw   = mat2(cy, sy, -sy, cy);
+   700→    gRotMousePitch = mat2(cp, sp, -sp, cp);
+   701→
+   702→    // --- ОПТИМИЗАЦИЯ 6: precompute позиции/радиусы частиц ---
+   703→    // Все sin/cos вычисляются один раз здесь, а не в каждом MapScene.
+   704→    // Экономия: ~1400 sin/cos вызовов на пиксель (было 8 частиц × 3 sin/cos
+   705→    // × 60 шагов raymarch + 6 CalcNormal = ~1440).
+   706→    for (int i = 0; i < 8; i++) {
+   707→        float fi = float(i);
+   708→        float angle = uTime * (0.4 + fi * 0.06) + fi * 0.78;
+   709→        float radius = 1.6 + 0.4 * sin(fi * 1.7 + uTime * 0.2);
+   710→        float yOff  = 0.8 * sin(fi * 0.9 + uTime * 0.3 + fi);
+   711→        gParticlePos[i] = vec3(cos(angle) * radius, yOff, sin(angle) * radius);
+   712→        gParticleRad[i] = 0.08 + 0.04 * sin(uTime * 2.0 + fi * 1.5);
+   713→    }
+   714→
+   715→    float cam_t = uTime * 0.3;
+   716→    float baseDist = 3.5;
+   717→    float dist = baseDist / max(uZoom, 0.001);
+   718→    vec3 ro = vec3(
+   719→        sin(cam_t) * dist,
+   720→        sin(cam_t * 0.7) * (dist * 0.35),
+   721→        cos(cam_t) * dist
+   722→    );
+   723→    vec3 ta = vec3(0.0);
+   724→    vec3 forward = normalize(ta - ro);
+   725→    vec3 right   = normalize(cross(vec3(0.0, 1.0, 0.0), forward));
+   726→    vec3 up      = cross(forward, right);
+   727→
+   728→    vec3 rd = normalize(forward + uv.x * right + uv.y * up);
+   729→
+   730→    // --- ОПТИМИЗАЦИЯ 2: bounding sphere check ---
+   731→    // Все фигуры + частицы лежат внутри сферы радиуса ~2.2 в центре.
+   732→    // Если луч не пересекает эту сферу — фигуры не видны, сразу
+   733→    // возвращаем фон, не тратя 60 шагов raymarching.
+   734→    float bsRadius = 2.2;
+   735→    float bsB = dot(ro, rd);
+   736→    float bsC = dot(ro, ro) - bsRadius * bsRadius;
+   737→    float bsDisc = bsB * bsB - bsC;
+   738→    if (bsDisc < 0.0) {
+   739→        // Луч мимо bounding sphere — рисуем только фон.
+   740→        float bgGrad0 = 0.5 + 0.5 * rd.y;
+   741→        vec3 bgTop0    = Palette(uTime * 0.05 + 0.0);
+   742→        vec3 bgBot0    = Palette(uTime * 0.05 + 0.4);
+   743→        vec3 bg0 = mix(bgBot0, bgTop0, bgGrad0) * 0.6;
+   744→        bg0 += vec3(StarField(rd));
+   745→
+   746→        vec2 q0 = (gl_FragCoord.xy - 0.5 * uResolution) / uResolution.x;
+   747→        bg0 *= 1.0 - 0.5 * dot(q0, q0);
+   748→
+   749→        return bg0;
+   750→    }
+   751→
+   752→    // --- Фон: градиентное небо + звёзды ---
+   753→    float bgGrad = 0.5 + 0.5 * rd.y;
+   754→    vec3 bgColTop    = Palette(uTime * 0.05 + 0.0);
+   755→    vec3 bgColBottom = Palette(uTime * 0.05 + 0.4);
+   756→    vec3 bg = mix(bgColBottom, bgColTop, bgGrad) * 0.6;
+   757→    float stars = StarField(rd);
+   758→    bg += vec3(stars);
+   759→
+   760→    // --- Raymarching ---
+   761→    // ОПТИМИЗАЦИЯ 8: для преломлённого прохода используем coarse-версию
+   762→    // raymarch (30 шагов вместо 60). Обе ветки — одна из них всегда false
+   763→    // для данного прохода, компилятор выберет нужную.
+   764→    vec2 hit;
+   765→    if (isCoarse) {
+   766→        hit = RayMarchCoarse(ro, rd);
+   767→    } else {
+   768→        hit = RayMarch(ro, rd);
+   769→    }
+   770→    vec3 col = bg;
+   771→
+   772→    if (hit.x > 0.0) {
+   773→        vec3 p = ro + rd * hit.x;
+   774→        vec3 n = CalcNormal(p);
+   775→
+   776→        vec3 lightDir = normalize(vec3(
+   777→            sin(uTime * 0.7), 0.8, cos(uTime * 0.7)
+   778→        ));
+   779→        float diff = max(dot(n, lightDir), 0.0);
+   780→        float amb = 0.15 + 0.15 * max(dot(n, vec3(0.0, 1.0, 0.0)), 0.0);
+   781→        vec3 viewDir = -rd;
+   782→        vec3 halfDir = normalize(lightDir + viewDir);
+   783→        float spec = pow(max(dot(n, halfDir), 0.0), 32.0);
+   784→
+   785→        if (hit.y >= MAT_LETTER - 0.05) {
+   786→            // ====== СТЕКЛЯННАЯ БУКВА ======
+   787→            // Стекло: преломлённая сцена позади + отражённое небо по Френелю
+   788→            // + spec-блик + неоновый кант по индексу буквы.
+   789→            float lid = floor((hit.y - MAT_LETTER) * 10.0 + 0.5);
+   790→            float fres = 0.07 + 0.80 * pow(1.0 - abs(dot(n, viewDir)), 3.0);
+   791→
+   792→            // Преломление (стекло ~1.45): мини-марш сцены за буквой.
+   793→            vec3 refrDir = refract(rd, n, 0.72);
+   794→            if (dot(refrDir, refrDir) < 1e-4) refrDir = reflect(rd, n);
+   795→            vec3 behind = LetterBehind(p + refrDir * 0.02, refrDir);
+   796→
+   797→            // Отражение: небо (градиент + звёзды) по отражённому лучу.
+   798→            vec3 reflDir = reflect(rd, n);
+   799→            float rg = 0.5 + 0.5 * reflDir.y;
+   800→            vec3 reflCol = mix(Palette(uTime * 0.05 + 0.4),
+   801→                               Palette(uTime * 0.05 + 0.0), rg) * 0.6;
+   802→            reflCol += vec3(StarField(reflDir));
+   803→
+   804→            // Тонированное стекло: буква обязана читаться на любом фоне,
+   805→            // поэтому даём цветную «массу» + неоновый кант + френель.
+   806→            vec3 tint = Palette(lid * 0.23 + uTime * 0.05);
+   807→            vec3 glass = mix(behind, behind * 0.42 + tint * 0.95, 0.58);
+   808→            glass = mix(glass, reflCol, fres);
+   809→
+   810→            vec3 lightDir = normalize(vec3(sin(uTime * 0.7), 0.8, cos(uTime * 0.7)));
+   811→            float spec = pow(max(dot(n, normalize(lightDir + viewDir)), 0.0), 48.0);
+   812→            glass += vec3(1.0) * spec * 0.9;
+   813→
+   814→            float rim = pow(1.0 - abs(dot(n, viewDir)), 2.0);
+   815→            glass += tint * (0.12 + 0.75 * rim);
+   816→
+   817→            col = glass;
+   818→        } else if (hit.y >= MAT_PARTICLE) {
+   819→            // ====== ЧАСТИЦА ======
+   820→            float pid = (hit.y - MAT_PARTICLE) * 10.0;
+   821→            float rndType  = hash(pid * 7.3 + 1.0);
+   822→            float rndColor = hash(pid * 3.7 + 5.0);
+   823→            float pulse = 0.5 + 0.5 * sin(uTime * (1.5 + rndType * 2.0) + pid * 0.7);
+   824→            vec3 particleCol = Palette(pid * 0.13 + rndColor + uTime * 0.1);
+   825→
+   826→            if (rndType > 0.5) {
+   827→                // --- СВЕТЯЩАЯСЯ ---
+   828→                float glow = 1.5 + 1.0 * pulse;
+   829→                col = particleCol * glow;
+   830→                col += vec3(1.0) * pow(pulse, 3.0) * 0.4;
+   831→            } else {
+   832→                // --- ПОЛУПРОЗРАЧНАЯ ---
+   833→                float alpha = 0.25 + 0.35 * pulse;
+   834→                float rim = pow(1.0 - abs(dot(n, viewDir)), 2.5);
+   835→                vec3 surface = particleCol * (amb * 0.7 + diff * 0.5);
+   836→                surface += particleCol * rim * 1.2;
+   837→                surface += vec3(1.0) * spec * 0.3;
+   838→                col = mix(bg, surface, alpha);
+   839→            }
+   840→        } else {
+   841→            // ====== ОСНОВНАЯ ФИГУРА ======
+   842→            vec3 objCol = Palette(p.x * 0.5 + p.y * 0.3 + p.z * 0.2 + uTime * 0.1);
+   843→            vec3 surface = objCol * (amb + diff * 0.8) + vec3(1.0) * spec * 0.5;
+   844→            float fog = 1.0 - exp(-hit.x * 0.08);
+   845→            col = mix(surface, bg, fog * 0.5);
+   846→            col += surface * 0.15;
+   847→        }
+   848→    }
+   849→
+   850→    // Виньетирование (тоже в линейном пространстве — иначе криво).
+   851→    vec2 q = (gl_FragCoord.xy - 0.5 * uResolution) / uResolution.x;
+   852→    float vignette = 1.0 - 0.5 * dot(q, q);
+   853→    col *= vignette;
+   854→
+   855→    return col;
+   856→}
+   857→
+   858→// Публичные обёртки: полный проход (для основного рендера) и coarse-проход
+   859→// (для преломления внутри капель).
+   860→vec3 RenderScene(vec2 uv) { return RenderSceneInner(uv, false); }
+   861→vec3 RenderSceneCoarse(vec2 uv) { return RenderSceneInner(uv, true); }
+   862→
+   863→void main() {
+   864→    vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution) / uResolution.y;
+   865→
+   866→    // 1. Основной рендер сцены — возвращает ЛИНЕЙНЫЙ цвет.
+   867→    vec3 col = RenderScene(uv);
+   868→
+   869→    // 2. Эффект стекающих капель — только если включён (клавиша D).
+   870→    // Важно: эффект применяется ДО тонмаппинга — преломлённый цвет
+   871→    // пересчитывается через повторный RenderScene, и должен быть
+   872→    // в том же линейном пространстве.
+   873→    if (uDroplets == 1) {
+   874→        // screenUV в [0..1] — без aspect correction (капли круглые на экране).
+   875→        vec2 screenUV = gl_FragCoord.xy / uResolution.xy;
+   876→
+   877→        vec4 drop = DropletEffect(screenUV);
+   878→        if (drop.z > 0.001) {
+   879→            // Преломление: пересчитываем цвет сцены со смещённым UV.
+   880→            // Переводим смещение из screen-space в наш aspect-corrected UV.
+   881→            // ОПТИМИЗАЦИЯ 8: используем RenderSceneCoarse (30 шагов raymarch
+   882→            // вместо 60) — преломлённый цвет виден только внутри маленьких
+   883→            // капель, там точность не критична.
+   884→            float aspect = uResolution.x / uResolution.y;
+   885→            vec2 refractedUv = uv + drop.xy * vec2(aspect, 1.0);
+   886→
+   887→            vec3 refractedCol = RenderSceneCoarse(refractedUv);
+   888→
+   889→            float wetness = drop.z;
+   890→
+   891→            if (drop.w > 0.5) {
+   892→                // === АКТИВНАЯ КАПЛЯ — сильный refract + spec-блик ===
+   893→                vec2 toCenter = drop.xy;
+   894→                vec2 lightDir2D = normalize(vec2(0.7, -0.7));  // свет сверху-справа
+   895→                float spec2D = pow(max(dot(normalize(toCenter + vec2(0.001)),
+   896→                                            -lightDir2D), 0.0), 16.0);
+   897→
+   898→                col = mix(col, refractedCol, wetness);
+   899→                col += vec3(1.0) * spec2D * wetness * 0.8;
+   900→                // Лёгкое затемнение по краю капли (как тень от мениска).
+   901→                col *= 1.0 - 0.15 * wetness * (1.0 - wetness);
+   902→            } else {
+   903→                // === МОКРЫЙ ПУТЬ / TRAIL — слабый refract, без spec, темнее ===
+   904→                col = mix(col, refractedCol, wetness);
+   905→                // Вода делает стекло темнее — мениск на водяной плёнке.
+   906→                col *= 1.0 - 0.20 * wetness;
+   907→                // Лёгкое мерцание — капризные блики света на водяной плёнке.
+   908→                float shimmer = 0.05 * wetness *
+   909→                    sin(uTime * 2.0 + screenUV.x * 50.0 + screenUV.y * 30.0);
+   910→                col += vec3(shimmer);
+   911→            }
+   912→        }
+   913→    }
+   914→
+   915→    // 3. Постобработка: ACES тонмаппинг + гамма-коррекция.
+   916→    if (uApplyToneMap == 1) {
+   917→        col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
+   918→    }
+   919→    col = pow(clamp(col, 0.0, 1.0), vec3(1.0 / 2.2));
+   920→
+   921→    FragColor = vec4(col, 1.0);
+   922→}
+   923→</script>
+   924→
+   925→<script>
+   926→'use strict';
+   927→
+   928→const canvas = document.getElementById('gl');
+   929→const gl = canvas.getContext('webgl2', { antialias: false, alpha: false });
+   930→
+   931→if (!gl) {
+   932→    document.body.innerHTML = '<div style="color:#fff;padding:40px;font-family:monospace;">' +
+   933→        'WebGL2 не поддерживается этим браузером.<br>' +
+   934→        'Попробуй Chrome, Firefox или Edge последней версии.</div>';
+   935→    throw new Error('no webgl2');
+   936→}
+   937→
+   938→function compileShader(type, src) {
+   939→    const sh = gl.createShader(type);
+   940→    gl.shaderSource(sh, src);
+   941→    gl.compileShader(sh);
+   942→    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+   943→        const log = gl.getShaderInfoLog(sh);
+   944→        console.error('Shader compile error:', log);
+   945→        throw new Error('Shader compile failed: ' + log);
+   946→    }
+   947→    return sh;
+   948→}
+   949→
+   950→const vsSrc = document.getElementById('vertex-shader').textContent;
+   951→const fsSrc = document.getElementById('fragment-shader').textContent;
+   952→
+   953→const vs = compileShader(gl.VERTEX_SHADER, vsSrc);
+   954→const fs = compileShader(gl.FRAGMENT_SHADER, fsSrc);
+   955→
+   956→const prog = gl.createProgram();
+   957→gl.attachShader(prog, vs);
+   958→gl.attachShader(prog, fs);
+   959→gl.linkProgram(prog);
+   960→if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+   961→    const log = gl.getProgramInfoLog(prog);
+   962→    console.error('Program link error:', log);
+   963→    throw new Error('Program link failed: ' + log);
+   964→}
+   965→
+   966→gl.useProgram(prog);
+   967→
+   968→// Создаём пустой VAO — нужно для WebGL, чтобы glDrawArrays работал
+   969→// без буферов вершин (мы их генерируем в шейдере через gl_VertexID).
+   970→const vao = gl.createVertexArray();
+   971→gl.bindVertexArray(vao);
+   972→
+   973→const uTime      = gl.getUniformLocation(prog, 'uTime');
+   974→const uRes       = gl.getUniformLocation(prog, 'uResolution');
+   975→const uToneMap   = gl.getUniformLocation(prog, 'uApplyToneMap');
+   976→const uZoom      = gl.getUniformLocation(prog, 'uZoom');
+   977→const uDroplets   = gl.getUniformLocation(prog, 'uDroplets');
+   978→const uMouseRot  = gl.getUniformLocation(prog, 'uMouseRot');
+   979→const uLetterPos = gl.getUniformLocation(prog, 'uLetterPos');   // vec3[4] — буквы D/E/M/O
+   980→
+   981→// ---- Управление: пробел = пауза, R = slow-mo, T = тонмаппинг,
+   982→//      колесо/+/- = зум, 0 = сброс, D = капли ----
+   983→let paused = false;
+   984→let slowMo = false;
+   985→let applyToneMap = true;
+   986→let droplets = true;     // эффект стекающих капель (клавиша D)
+   987→let zoom = 1.0;          // коэффициент зума
+   988→let timeAccum = 0.0;
+   989→let lastTime = performance.now() / 1000.0;
+   990→
+   991→// Поддержка URL hash для отладки конкретных моментов анимации.
+   992→// Например: preview.html#24 — старт с timeAccum=24 (фаза чайника).
+   993→// Это НЕ влияет на обычное использование, только если в URL есть #N.
+   994→if (location.hash && location.hash.length > 1) {
+   995→    const t = parseFloat(location.hash.slice(1));
+   996→    if (!isNaN(t)) timeAccum = t;
+   997→}
+   998→
+   999→// ---- Стеклянные буквы D, E, M, O: физика полёта ----------------------
+  1000→// Позиции считаются на CPU и приходят в шейдер как uLetterPos[4]: у
+  1001→// шейдера нет состояния между кадрами, а столкновения требуют его.
+  1002→// Схема: постоянная скорость + плавное «блуждание» направления (три
+  1003→// несинхронных синуса) + мягкое выталкивание из центральной зоны
+  1004→// (вокруг морфящейся фигуры) + отражение от стен бокса (буквы всегда
+  1005→// в кадре) + парные столкновения с ГРАДУАЛЬНОЙ сменой направления:
+  1006→// импульс размазан на несколько кадров, плюс лёгкое подмешивание
+  1007→// скорости соседа. На паузе физика не шагает — буквы замирают.
+  1008→const LETTER_N     = 4;
+  1009→const LETTER_HALF  = 0.2;   // полувысота глифа = 2.5 × средний радиус частицы (0.08)
+  1010→const LETTER_R_COL = 0.45;  // радиус столкновения (диагональ глифа ~0.29 + запас)
+  1011→const LETTER_BOUND = [1.65, 1.65, 1.65]; // куб-границы (всегда в кадре: кадр ±3.5)
+  1012→const LETTER_KEEP  = [1.25, 1.25, 1.25]; // сфера выталкивания от центральной фигуры
+  1013→const LETTER_R_WALL = 0.32; // отступ букв от стен куба (диагональ глифа ~0.29)
+  1014→const letterSpd = [0.34, 0.30, 0.38, 0.27]; // модуль скорости каждой буквы
+  1015→const letterPos = new Float32Array(12);
+  1016→const letterVel = new Float32Array(12);
+  1017→let letterTime = 0.0;
+  1018→
+  1019→// Детерминированный LCG: одинаковый старт при каждом запуске —
+  1020→// сцена воспроизводима (важно для отладки и скриншотов).
+  1021→let lcgState = 987654321;
+  1022→function lcg() {
+  1023→    lcgState = (1103515245 * lcgState + 12345) % 2147483648;
+  1024→    return lcgState / 2147483648;
+  1025→}
+  1026→
+  1027→function resetLetters() {
+  1028→    const corners = [
+  1029→        [-1.25,  0.75,  0.45],   // D
+  1030→        [ 1.25,  0.70, -0.45],   // E
+  1031→        [-1.05, -0.75, -0.40],   // M
+  1032→        [ 1.10, -0.72,  0.50],   // O
+  1033→    ];
+  1034→    for (let i = 0; i < LETTER_N; i++) {
+  1035→        letterPos[i*3]     = corners[i][0];
+  1036→        letterPos[i*3 + 1] = corners[i][1];
+  1037→        letterPos[i*3 + 2] = corners[i][2];
+  1038→        let vx = lcg() * 2 - 1, vy = lcg() * 2 - 1, vz = lcg() * 2 - 1;
+  1039→        const l = Math.hypot(vx, vy, vz) || 1.0;
+  1040→        letterVel[i*3]     = vx / l * letterSpd[i];
+  1041→        letterVel[i*3 + 1] = vy / l * letterSpd[i];
+  1042→        letterVel[i*3 + 2] = vz / l * letterSpd[i];
+  1043→    }
+  1044→}
+  1045→
+  1046→function stepLetters(dt) {
+  1047→    letterTime += dt;
+  1048→    const R = LETTER_R_COL;
+  1049→
+  1050→    for (let i = 0; i < LETTER_N; i++) {
+  1051→        let px = letterPos[i*3], py = letterPos[i*3+1], pz = letterPos[i*3+2];
+  1052→        let vx = letterVel[i*3], vy = letterVel[i*3+1], vz = letterVel[i*3+2];
+  1053→        const ph = i * 1.9;
+  1054→
+  1055→        // 1. Блуждание: мягкие несинхронные ускорения.
+  1056→        vx += 0.30 * Math.sin(letterTime * 0.43 + ph + 0.8) * dt;
+  1057→        vy += 0.30 * Math.sin(letterTime * 0.31 + ph + 2.4) * dt;
+  1058→        vz += 0.30 * Math.sin(letterTime * 0.53 + ph + 4.1) * dt;
+  1059→
+  1060→        // 2. Выталкивание из центральной зоны (не влезать в фигуру).
+  1061→        const ex = px / LETTER_KEEP[0], ey = py / LETTER_KEEP[1], ez = pz / LETTER_KEEP[2];
+  1062→        const e2 = ex*ex + ey*ey + ez*ez;
+  1063→        if (e2 < 1.0) {
+  1064→            let gx = ex / LETTER_KEEP[0], gy = ey / LETTER_KEEP[1], gz = ez / LETTER_KEEP[2];
+  1065→            const glen = Math.hypot(gx, gy, gz) || 1.0;
+  1066→            const push = 3.0 * (1.0 - e2);
+  1067→            vx += gx / glen * push * dt;
+  1068→            vy += gy / glen * push * dt;
+  1069→            vz += gz / glen * push * dt;
+  1070→        }
+  1071→
+  1072→        // 2b. Отражение от сферы-«мантии»: если буква у границы выталкивания
+  1073→        // летит К ЦЕНТРУ — разворачиваем нормальную составляющую скорости.
+  1074→        const rr = Math.hypot(px, py, pz);
+  1075→        if (rr > LETTER_KEEP[0] * 0.92 && rr > 1e-6) {
+  1076→            const nrx = px / rr, nry = py / rr, nrz = pz / rr;
+  1077→            const vn = vx*nrx + vy*nry + vz*nrz;
+  1078→            if (vn < 0) {
+  1079→                vx -= nrx * vn * 1.5;
+  1080→                vy -= nry * vn * 1.5;
+  1081→                vz -= nrz * vn * 1.5;
+  1082→            }
+  1083→        }
+  1084→
+  1085→        // 3. Движение.
+  1086→        px += vx * dt; py += vy * dt; pz += vz * dt;
+  1087→
+  1088→        // 4. Стены бокса: отражение с демпфированием (направление меняется).
+  1089→        const P = [px, py, pz], V = [vx, vy, vz];
+  1090→        for (let a = 0; a < 3; a++) {
+  1091→            const lim = LETTER_BOUND[a] - LETTER_R_WALL;
+  1092→            if (P[a] >  lim) { P[a] =  lim; if (V[a] > 0) V[a] = -V[a] * 0.82; }
+  1093→            if (P[a] < -lim) { P[a] = -lim; if (V[a] < 0) V[a] = -V[a] * 0.82; }
+  1094→        }
+  1095→        px = P[0]; py = P[1]; pz = P[2];
+  1096→        vx = V[0]; vy = V[1]; vz = V[2];
+  1097→
+  1098→        letterPos[i*3] = px; letterPos[i*3+1] = py; letterPos[i*3+2] = pz;
+  1099→        letterVel[i*3] = vx; letterVel[i*3+1] = vy; letterVel[i*3+2] = vz;
+  1100→    }
+  1101→
+  1102→    // 5. Парные столкновения — «медленно меняют направление»: импульс
+  1103→    //    размазан по кадрам (коэффициент 0.30), плюс лёгкое подмешивание
+  1104→    //    скорости соседа, пока буквы перекрываются.
+  1105→    for (let i = 0; i < LETTER_N; i++) {
+  1106→        for (let j = i + 1; j < LETTER_N; j++) {
+  1107→            const dx = letterPos[i*3]   - letterPos[j*3];
+  1108→            const dy = letterPos[i*3+1] - letterPos[j*3+1];
+  1109→            const dz = letterPos[i*3+2] - letterPos[j*3+2];
+  1110→            const d = Math.hypot(dx, dy, dz);
+  1111→            if (d >= 2 * R || d < 1e-5) continue;
+  1112→            const nx = dx / d, ny = dy / d, nz = dz / d;
+  1113→            const overlap = 2 * R - d;
+  1114→            // мягкое раздвигание (не целиком за кадр)
+  1115→            for (let a = 0; a < 3; a++) {
+  1116→                const sep = (a === 0 ? nx : a === 1 ? ny : nz) * overlap * 0.28;
+  1117→                letterPos[i*3+a] += sep;
+  1118→                letterPos[j*3+a] -= sep;
+  1119→            }
+  1120→            // погасить сближение частично — разворот за несколько кадров
+  1121→            const rvx = letterVel[i*3]   - letterVel[j*3];
+  1122→            const rvy = letterVel[i*3+1] - letterVel[j*3+1];
+  1123→            const rvz = letterVel[i*3+2] - letterVel[j*3+2];
+  1124→            const vn = rvx*nx + rvy*ny + rvz*nz;
+  1125→            if (vn < 0) {
+  1126→                const imp = -vn * 0.5 * 0.30;
+  1127→                letterVel[i*3]   += nx * imp; letterVel[j*3]   -= nx * imp;
+  1128→                letterVel[i*3+1] += ny * imp; letterVel[j*3+1] -= ny * imp;
+  1129→                letterVel[i*3+2] += nz * imp; letterVel[j*3+2] -= nz * imp;
+  1130→            }
+  1131→            // лёгкое подмешивание — плавный доворот
+  1132→            for (let a = 0; a < 3; a++) {
+  1133→                const vi = letterVel[i*3+a], vj = letterVel[j*3+a];
+  1134→                letterVel[i*3+a] = vi + (vj - vi) * 0.04;
+  1135→                letterVel[j*3+a] = vj + (vi - vj) * 0.04;
+  1136→            }
+  1137→        }
+  1138→    }
+  1139→
+  1140→    // 6. Нормировка скорости: модуль постоянный, направление — живое.
+  1141→    for (let i = 0; i < LETTER_N; i++) {
+  1142→        const vx = letterVel[i*3], vy = letterVel[i*3+1], vz = letterVel[i*3+2];
+  1143→        const l = Math.hypot(vx, vy, vz);
+  1144→        if (l > 1e-6) {
+  1145→            const k = Math.min(1.0, dt * 6.0);
+  1146→            letterVel[i*3]   = vx + (vx / l * letterSpd[i] - vx) * k;
+  1147→            letterVel[i*3+1] = vy + (vy / l * letterSpd[i] - vy) * k;
+  1148→            letterVel[i*3+2] = vz + (vz / l * letterSpd[i] - vz) * k;
+  1149→        }
+  1150→    }
+  1151→}
+  1152→
+  1153→resetLetters();
+  1154→
+  1155→function setZoom(z) {
+  1156→    zoom = Math.max(0.3, Math.min(2.5, z));
+  1157→    document.getElementById('zoom').textContent = `Zoom: ${zoom.toFixed(2)}x`;
+  1158→}
+  1159→
+  1160→window.addEventListener('keydown', (e) => {
+  1161→    if (e.code === 'Space') { paused = !paused; e.preventDefault(); }
+  1162→    else if (e.code === 'KeyR') { slowMo = !slowMo; }
+  1163→    else if (e.code === 'KeyT') { applyToneMap = !applyToneMap; }
+  1164→    else if (e.code === 'KeyD') { droplets = !droplets; }
+  1165→    else if (e.code === 'Equal' || e.code === 'NumpadAdd' || e.key === '+') {
+  1166→        // Зум +
+  1167→        setZoom(zoom * 1.15); e.preventDefault();
+  1168→    }
+  1169→    else if (e.code === 'Minus' || e.code === 'NumpadSubtract' || e.key === '-') {
+  1170→        // Зум -
+  1171→        setZoom(zoom / 1.15); e.preventDefault();
+  1172→    }
+  1173→    else if (e.code === 'Digit0' || e.code === 'Numpad0') {
+  1174→        // Сброс зума
+  1175→        setZoom(1.0);
+  1176→    }
+  1177→});
+  1178→
+  1179→// Зум колесом мыши
+  1180→window.addEventListener('wheel', (e) => {
+  1181→    // deltaY > 0 — прокрутка вниз — отдаляем
+  1182→    // deltaY < 0 — прокрутка вверх — приближаем
+  1183→    const factor = Math.exp(-e.deltaY * 0.0015);
+  1184→    setZoom(zoom * factor);
+  1185→    e.preventDefault();
+  1186→}, { passive: false });
+  1187→
+  1188→// ---- Вращение сцены мышью (drag ЛКМ) ---------------------------------
+  1189→// Работает в ЛЮБОЙ момент, в т.ч. на паузе: вращение — это отдельный
+  1190→// uniform-офсет (uMouseRot) поверх time-анимации. На паузе timeAccum
+  1191→// замирает, но кадры продолжают рендериться каждый rAF — сцена остаётся
+  1192→// интерактивной без потери кадров.
+  1193→//
+  1194→// Схема «без потери кадров»:
+  1195→//   1. Дельты мыши копятся в rotYawTarget/rotPitchTarget в обработчике
+  1196→//      pointermove — если мышь шлёт события чаще, чем идёт рендер,
+  1197→//      НИЧЕГО не теряется: всё накопится до следующего кадра.
+  1198→//   2. Каждый кадр текущие углы экспоненциально догоняют цель —
+  1199→//      плавно и независимо от FPS (см. render()).
+  1200→let rotYaw = 0.0, rotPitch = 0.0;               // сглаженные текущие углы
+  1201→let rotYawTarget = 0.0, rotPitchTarget = 0.0;   // накопленные дельты мыши
+  1202→let dragging = false;
+  1203→let lastPX = 0, lastPY = 0;
+  1204→
+  1205→canvas.addEventListener('pointerdown', (e) => {
+  1206→    if (e.button !== 0) return;   // только ЛКМ
+  1207→    dragging = true;
+  1208→    lastPX = e.clientX;
+  1209→    lastPY = e.clientY;
+  1210→    canvas.style.cursor = 'grabbing';
+  1211→    canvas.setPointerCapture(e.pointerId);   // drag продолжится даже за пределами окна
+  1212→});
+  1213→canvas.addEventListener('pointermove', (e) => {
+  1214→    if (!dragging) return;
+  1215→    const dx = e.clientX - lastPX;
+  1216→    const dy = e.clientY - lastPY;
+  1217→    lastPX = e.clientX;
+  1218→    lastPY = e.clientY;
+  1219→    // 0.008 рад/пиксель ≈ 0.46°/px. Минус по dy: тянем вниз — передняя
+  1220→    // грань фигуры уходит вниз (эффект «кручу глобус рукой»).
+  1221→    rotYawTarget   += dx * 0.008;
+  1222→    rotPitchTarget -= dy * 0.008;
+  1223→    // Ограничиваем наклон — фигура не переворачивается через полюс.
+  1224→    rotPitchTarget = Math.max(-1.45, Math.min(1.45, rotPitchTarget));
+  1225→});
+  1226→const endDrag = (e) => {
+  1227→    if (!dragging) return;
+  1228→    dragging = false;
+  1229→    canvas.style.cursor = 'grab';
+  1230→    try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+  1231→};
+  1232→canvas.addEventListener('pointerup', endDrag);
+  1233→canvas.addEventListener('pointercancel', endDrag);
+  1234→canvas.style.cursor = 'grab';
+  1235→
+  1236→// ---- Resize ----
+  1237→function resize() {
+  1238→    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  1239→    const w = Math.floor(window.innerWidth * dpr);
+  1240→    const h = Math.floor(window.innerHeight * dpr);
+  1241→    if (canvas.width !== w || canvas.height !== h) {
+  1242→        canvas.width = w;
+  1243→        canvas.height = h;
+  1244→    }
+  1245→    gl.viewport(0, 0, canvas.width, canvas.height);
+  1246→}
+  1247→window.addEventListener('resize', resize);
+  1248→resize();
+  1249→
+  1250→// ---- FPS-метр ----
+  1251→const fpsEl = document.getElementById('fps');
+  1252→let frameCount = 0;
+  1253→let fpsAccum = 0.0;
+  1254→
+  1255→function render() {
+  1256→    const now = performance.now() / 1000.0;
+  1257→    let dt = now - lastTime;
+  1258→    lastTime = now;
+  1259→    if (dt > 1/30) dt = 1/30;
+  1260→
+  1261→    let stepDt = 0.0;
+  1262→    if (!paused) {
+  1263→        stepDt = slowMo ? dt * 0.25 : dt;
+  1264→        timeAccum += stepDt;
+  1265→        stepLetters(stepDt);   // физика букв: тот же dt — на паузе замирают
+  1266→    }
+  1267→
+  1268→    // Плавное догоняние цели вращения мыши. Экспонента с k=50: отклик
+  1269→    // ~20 мс (лаг незаметен), рывки опроса мыши сглаживаются. Полное
+  1270→    // смещение сохраняется — экспонента сходится к цели, ничего не
+  1271→    // теряется. Кадры рендерятся каждый rAF — и на паузе тоже.
+  1272→    const rotSmooth = 1.0 - Math.exp(-dt * 50.0);
+  1273→    rotYaw   += (rotYawTarget   - rotYaw)   * rotSmooth;
+  1274→    rotPitch += (rotPitchTarget - rotPitch) * rotSmooth;
+  1275→
+  1276→    gl.useProgram(prog);
+  1277→    gl.uniform1f(uTime, timeAccum);
+  1278→    gl.uniform2f(uRes, canvas.width, canvas.height);
+  1279→    gl.uniform1i(uToneMap, applyToneMap ? 1 : 0);
+  1280→    gl.uniform1f(uZoom, zoom);
+  1281→    gl.uniform1i(uDroplets, droplets ? 1 : 0);
+  1282→    gl.uniform2f(uMouseRot, rotYaw, rotPitch);
+  1283→    gl.uniform3fv(uLetterPos, letterPos);
+  1284→
+  1285→    gl.bindVertexArray(vao);
+  1286→    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  1287→
+  1288→    // FPS
+  1289→    frameCount++;
+  1290→    fpsAccum += dt;
+  1291→    if (fpsAccum >= 0.5) {
+  1292→        const fps = (frameCount / fpsAccum).toFixed(1);
+  1293→        fpsEl.textContent = `FPS: ${fps}${slowMo ? '  (slow)' : ''}${paused ? '  (paused)' : ''}`;
+  1294→        frameCount = 0;
+  1295→        fpsAccum = 0.0;
+  1296→    }
+  1297→
+  1298→    requestAnimationFrame(render);
+  1299→}
+  1300→requestAnimationFrame(render);
+  1301→</script>
+  1302→</body>
+  1303→</html>
+  1304→

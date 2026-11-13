@@ -1,0 +1,10 @@
+{
+ "id": "bloom_blur",
+ "kind": "post",
+ "cost": 2,
+ "shader": "bloom_blur.frag",
+ "doc": "9-tap separable Gaussian blur. Direction via uDirection uniform.",
+ "uniforms": {
+  "uDirection": {"type": "vec2", "default": [1.0, 0.0], "bind": "1.0,0.0"}
+ }
+}

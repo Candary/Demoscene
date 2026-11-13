@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>vignette.frag — preview</title>
+<style>
+  body { margin: 0; background: #000; overflow: hidden; font-family: monospace; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  .hud { position: absolute; top: 8px; left: 8px; color: #6f6; font: 12px monospace;
+         background: rgba(0,0,0,0.85); padding: 8px 12px; border-radius: 4px; max-width: 95vw; white-space: pre-wrap; }
+  .hud.err { color: #f66; } .hud.ok { color: #6f6; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud" id="hud">init…</div>
+<canvas id="texSrc" width="512" height="512" style="display:none"></canvas>
+
+<script id="vs" type="x-shader/x-vertex">#version 300 es
+in vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+</script>
+
+<script id="fs" type="x-shader/x-fragment">#version 300 es
+precision highp float;
+precision highp int;
+out vec4 FragColor;
+uniform float uTime; uniform float uClipTime; uniform float uProgress;
+uniform float uGlobalTime; uniform vec2 uResolution; uniform int uSeed;
+uniform float uBeat; uniform float uBeatPhase; uniform float uBarPhase; uniform float uEnergy;
+uniform sampler2D uInput;
+uniform float uStrength; uniform float uSoftness;
+void main() {
+    vec2 uv = gl_FragCoord.xy / uResolution;
+    vec4 col = texture(uInput, uv);
+    vec2 d = uv - 0.5;
+    float dist = length(d);
+    float vignette = 1.0 - uStrength * smoothstep(0.5 - uSoftness * 0.5, 0.5, dist);
+    FragColor = vec4(col.rgb * vignette, col.a);
+}
+</script>
+
+<script>
+(function () {
+    const canvas = document.getElementById('c');
+    const hud = document.getElementById('hud');
+    const log = [];
+    function setHud(cls, msg) { hud.className = 'hud ' + cls; hud.textContent = msg; }
+    function push(msg) { log.push(msg); setHud('', log.join('\n')); }
+
+    // Procedural source texture: colorful grid
+    const c = document.getElementById('texSrc');
+    const ctx = c.getContext('2d');
+    for (let x = 0; x < 8; x++) for (let y = 0; y < 8; y++) {
+        ctx.fillStyle = `hsl(${(x*32+y*45)%360}, 70%, 50%)`;
+        ctx.fillRect(x*64, y*64, 64, 64);
+    }
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 32px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('VIGNETTE', 256, 260);
+
+    try {
+        push('step 1: get webgl2 context…');
+        const gl = canvas.getContext('webgl2', { antialias: false, premultipliedAlpha: false });
+        if (!gl) { setHud('err', 'ERROR: WebGL2 не поддерживается.'); return; }
+        push('step 2: ' + gl.getParameter(gl.VERSION));
+
+        let lastErr = '';
+        function compile(type, src, name) {
+            const sh = gl.createShader(type); gl.shaderSource(sh, src.trim()); gl.compileShader(sh);
+            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) { lastErr = gl.getShaderInfoLog(sh) || '(empty)'; return null; }
+            return sh;
+        }
+        const vs = compile(gl.VERTEX_SHADER, document.getElementById('vs').textContent, 'vertex');
+        if (!vs) { setHud('err', 'VERTEX FAIL:\n' + lastErr); return; }
+        const fs = compile(gl.FRAGMENT_SHADER, document.getElementById('fs').textContent, 'fragment');
+        if (!fs) { setHud('err', 'FRAGMENT FAIL:\n' + lastErr); return; }
+        const prog = gl.createProgram(); gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { setHud('err', 'LINK FAIL:\n' + gl.getProgramInfoLog(prog)); return; }
+        gl.useProgram(prog); push('step 3: linked OK');
+
+        const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+        const aPos = gl.getAttribLocation(prog, 'aPos');
+        gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+        const tex = gl.createTexture(); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        const U = {};
+        ['uTime','uClipTime','uProgress','uGlobalTime','uResolution','uSeed',
+         'uBeat','uBeatPhase','uBarPhase','uEnergy','uInput','uStrength','uSoftness']
+            .forEach(n => U[n] = gl.getUniformLocation(prog, n));
+        gl.uniform1i(U.uInput, 0);
+
+        let halfRes = true;
+        function resize() {
+            const s = halfRes ? 0.5 : 1.0;
+            canvas.width = Math.floor(window.innerWidth * s);
+            canvas.height = Math.floor(window.innerHeight * s);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        window.addEventListener('keydown', e => { if (e.key === 'q' || e.key === 'Q') { halfRes = !halfRes; resize(); } });
+        resize();
+
+        const start = performance.now(); let lastT = 0, fc = 0, fps = 0;
+        function frame() {
+            try {
+                const T = (performance.now() - start) / 1000;
+                const dt = lastT > 0 ? (T - lastT) : 0.016; lastT = T;
+                const inst = 1.0 / dt; fps = fps > 0 ? fps * 0.9 + inst * 0.1 : inst;
+                // Animate strength and softness over time
+                const strength = 0.4 + 0.3 * Math.sin(T * 0.3);
+                const softness = 0.5 + 0.2 * Math.sin(T * 0.5);
+                const beat = T * 2.0, bp = beat - Math.floor(beat);
+                gl.uniform1f(U.uTime, T); gl.uniform1f(U.uClipTime, T);
+                gl.uniform1f(U.uProgress, 1); gl.uniform1f(U.uGlobalTime, T);
+                gl.uniform2f(U.uResolution, canvas.width, canvas.height);
+                gl.uniform1i(U.uSeed, 2026); gl.uniform1f(U.uBeat, beat);
+                gl.uniform1f(U.uBeatPhase, bp); gl.uniform1f(U.uBarPhase, (beat/4)-Math.floor(beat/4));
+                gl.uniform1f(U.uEnergy, 0.5);
+                gl.uniform1f(U.uStrength, strength);
+                gl.uniform1f(U.uSoftness, softness);
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                if (fc === 0) { const e = gl.getError(); if (e !== gl.NO_ERROR) { setHud('err', 'GL ERROR: 0x'+e.toString(16)); return; } }
+                fc++;
+                if (fc === 1) setHud('ok', '✅ first frame rendered');
+                else if (fc % 5 === 0) {
+                    const rm = halfRes ? 'half' : 'full';
+                    setHud('ok', '✅ vignette  |  T=' + T.toFixed(1) + 's  |  strength=' + strength.toFixed(2) +
+                           '  |  softness=' + softness.toFixed(2) +
+                           '  |  FPS=' + fps.toFixed(0) + '  |  ' + rm + ' ' + canvas.width + 'x' + canvas.height + '  |  Q: toggle');
+                }
+            } catch (e) { setHud('err', 'FRAME ERROR: ' + (e.message||e)); console.error(e); return; }
+            requestAnimationFrame(frame);
+        }
+        push('step 4: starting render loop…');
+        frame();
+    } catch (e) {
+        setHud('err', 'EXCEPTION: ' + (e.message||e) + (lastErr ? '\nShader: '+lastErr : '') + '\nLog:\n'+log.join('\n'));
+        console.error(e);
+    }
+})();
+</script>
+</body>
+</html>

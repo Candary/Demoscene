@@ -1,0 +1,33 @@
+uroboros/
+├── README.md
+├── pyproject.toml
+├── .gitignore
+├── uroboros/
+│   ├── __init__.py
+│   ├── __main__.py
+│   ├── formats.py
+│   ├── memory.py
+│   ├── registry.py
+│   ├── engine.py
+│   ├── plan.py
+│   ├── glm.py
+│   ├── adapters.py
+│   └── cli.py
+├── patches/
+│   ├── geometry.py
+│   ├── palette.py
+│   ├── compose.py
+│   ├── color_matrix.py
+│   ├── cozy_scene.py
+│   └── validate.py
+├── examples/
+│   ├── plan_simple.json
+│   ├── plan_with_validation.json
+│   └── plan_cozy.json
+└── tests/
+    ├── conftest.py
+    ├── test_formats.py
+    ├── test_memory.py
+    ├── test_registry.py
+    ├── test_engine.py
+    └── test_patches.py

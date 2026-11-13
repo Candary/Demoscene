@@ -1,0 +1,11 @@
+{
+ "id": "bloom_bright",
+ "kind": "post",
+ "cost": 1,
+ "shader": "bloom_bright.frag",
+ "doc": "Bright-pass filter для multi-pass bloom. Выделяет пиксели выше threshold.",
+ "uniforms": {
+  "uThreshold": {"type": "float", "min": 0, "max": 2, "default": 0.6, "bind": "0.6"},
+  "uIntensity": {"type": "float", "min": 0, "max": 3, "default": 1.0, "bind": "1.0"}
+ }
+}

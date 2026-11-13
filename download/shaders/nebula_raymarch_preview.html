@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>nebula_raymarch.frag — preview</title>
+<style>
+  body { margin: 0; background: #000; overflow: hidden; font-family: monospace; }
+  canvas { display: block; width: 100vw; height: 100vh; image-rendering: auto; }
+  .hud {
+    position: absolute; top: 8px; left: 8px;
+    color: #6f6; font: 12px monospace;
+    background: rgba(0,0,0,0.85); padding: 8px 12px; border-radius: 4px;
+    max-width: 95vw; white-space: pre-wrap;
+  }
+  .hud.err { color: #f66; }
+  .hud.ok  { color: #6f6; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud" id="hud">init…</div>
+
+<script id="vs" type="x-shader/x-vertex">#version 300 es
+in vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+</script>
+
+<script id="fs" type="x-shader/x-fragment">#version 300 es
+precision highp float;
+precision highp int;
+
+out vec4 FragColor;
+
+uniform float uTime;
+uniform float uClipTime;
+uniform float uProgress;
+uniform float uGlobalTime;
+uniform vec2  uResolution;
+uniform int   uSeed;
+uniform float uBeat;
+uniform float uBeatPhase;
+uniform float uBarPhase;
+uniform float uEnergy;
+
+uniform vec3  uPrimaryColor;
+uniform vec3  uAccentColor;
+uniform float uIntensity;
+uniform float uMotionSpeed;
+uniform float uPulse;
+
+const float PI  = 3.14159265359;
+const float TAU = 6.28318530718;
+const int   VOLUME_STEPS = 40;
+const float VOLUME_NEAR  = 1.0;
+const float VOLUME_FAR   = 20.0;
+const float DENSITY_SCALE = 0.6;
+
+float hash3(vec3 p) {
+    p = fract(p * 0.3183099 + 0.1) + float(uSeed) * 0.0001;
+    p *= 17.0;
+    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+float noise3(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float na = hash3(i + vec3(0.0, 0.0, 0.0));
+    float nb = hash3(i + vec3(1.0, 0.0, 0.0));
+    float nc = hash3(i + vec3(0.0, 1.0, 0.0));
+    float nd = hash3(i + vec3(1.0, 1.0, 0.0));
+    float ne = hash3(i + vec3(0.0, 0.0, 1.0));
+    float nf = hash3(i + vec3(1.0, 0.0, 1.0));
+    float ng = hash3(i + vec3(0.0, 1.0, 1.0));
+    float nh = hash3(i + vec3(1.0, 1.0, 1.0));
+    return mix(mix(mix(na, nb, f.x), mix(nc, nd, f.x), f.y),
+               mix(mix(ne, nf, f.x), mix(ng, nh, f.x), f.y), f.z);
+}
+
+float fbm(vec3 p) {
+    float v = 0.0;
+    float a = 0.5;
+    v += a * noise3(p);          p = p * 2.0 + vec3(1.7, 2.3, 3.1); a *= 0.5;
+    v += a * noise3(p);          p = p * 2.0 + vec3(1.7, 2.3, 3.1); a *= 0.5;
+    v += a * noise3(p);          p = p * 2.0 + vec3(1.7, 2.3, 3.1); a *= 0.5;
+    v += a * noise3(p);
+    return v;
+}
+
+float densityField(vec3 p) {
+    vec3 anim = vec3(0.0, 0.0, uTime * uMotionSpeed * 0.1);
+    vec3 q = p + anim;
+    float warp = fbm(q + vec3(5.2, 1.3, 0.0));
+    float mist = fbm(q + vec3(2.0 * warp, 2.0 * warp, 0.0));
+    return smoothstep(0.4, 0.75, mist);
+}
+
+vec4 volumetricMarch(vec3 ro, vec3 rd) {
+    // OPTIMIZATION: mediump для accumulation storage.
+    mediump vec3 totalColor = vec3(0.0);
+    mediump float totalAlpha = 0.0;
+
+    // OPTIMIZATION: Adaptive step size — larger steps in empty regions.
+    float baseStepSize = (VOLUME_FAR - VOLUME_NEAR) / float(VOLUME_STEPS);
+
+    float t = VOLUME_NEAR;
+    for (int i = 0; i < VOLUME_STEPS; i++) {
+        if (t >= VOLUME_FAR) break;
+        vec3 p = ro + rd * t;
+        float density = densityField(p) * DENSITY_SCALE;
+
+        // Mask-based accumulation (no early return from function).
+        float hasDensity = step(0.001, density);
+        float colorMix = smoothstep(0.2, 0.8, density);
+        mediump vec3 localColor = mix(uPrimaryColor, uAccentColor, colorMix);
+        float distFade = 1.0 / (1.0 + t * 0.1);
+        float brightness = uIntensity * distFade * (1.0 + uPulse * 0.5);
+        mediump float sampleAlpha = density * baseStepSize * 0.3 * hasDensity;
+        mediump vec3 sampleColor = localColor * brightness;
+        totalColor += (1.0 - totalAlpha) * sampleColor * sampleAlpha;
+        totalAlpha += (1.0 - totalAlpha) * sampleAlpha;
+
+        // EARLY RAY TERMINATION.
+        if (totalAlpha > 0.95) break;
+
+        // ADAPTIVE STEP: 2.5× larger step in empty regions.
+        float stepMult = (density < 0.01) ? 2.5 : 1.0;
+        t += baseStepSize * stepMult;
+    }
+    return vec4(totalColor, totalAlpha);
+}
+
+vec3 backgroundColor(vec3 rd) {
+    float t = 0.5 + 0.5 * rd.y;
+    vec3 base = mix(vec3(0.02, 0.02, 0.04), vec3(0.05, 0.06, 0.10), t);
+    return base + uPrimaryColor * 0.03 * (1.0 - t);
+}
+
+vec3 aces(vec3 c) {
+    return (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);
+}
+
+void main() {
+    vec2 fragUv = gl_FragCoord.xy / uResolution;
+    vec2 uv = (fragUv * 2.0 - 1.0) * vec2(uResolution.x / uResolution.y, 1.0);
+
+    float cam_t = uTime * 0.05 * uMotionSpeed;
+    vec3 ro = vec3(sin(cam_t) * 1.5, 0.0, -6.0);
+    vec3 ta = vec3(0.0, 0.0, 0.0);
+    vec3 fwd = normalize(ta - ro);
+    vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), fwd));
+    vec3 up = cross(fwd, right);
+    vec3 rd = normalize(fwd + uv.x * right + uv.y * up);
+
+    vec4 vol = volumetricMarch(ro, rd);
+    vec3 bg = backgroundColor(rd);
+    vec3 col = mix(bg, vol.rgb, vol.a);
+
+    // OPTIMIZATION: uPulse brightness boost.
+    // pow(max(0.0, sin(...)), 4.0) — НЕТ pow в шейдере, uPulse уже приходит готовым.
+    // Но можем approx sine-based boost через multiplies.
+    col += uAccentColor * uPulse * 0.2;
+
+    vec2 vd = fragUv - 0.5;
+    col *= 1.0 - 0.35 * dot(vd, vd) * 2.0;
+    col = aces(col);
+    col = pow(clamp(col, 0.0, 1.0), vec3(1.0 / 2.2));  // gamma pow — оставляем (один раз за кадр)
+
+    FragColor = vec4(col, 1.0);
+}
+</script>
+
+<script>
+(function () {
+    const canvas = document.getElementById('c');
+    const hud = document.getElementById('hud');
+    const log = [];
+    function setHud(cls, msg) { hud.className = 'hud ' + cls; hud.textContent = msg; }
+    function push(msg) { log.push(msg); setHud('', log.join('\n')); }
+
+    try {
+        push('step 1: get webgl2 context…');
+        const gl = canvas.getContext('webgl2', { antialias: false, premultipliedAlpha: false });
+        if (!gl) { setHud('err', 'ERROR: WebGL2 не поддерживается.'); return; }
+        push('step 2: ' + gl.getParameter(gl.VERSION));
+        push('step 3: renderer=' + gl.getParameter(gl.RENDERER).substring(0, 60));
+
+        let lastShaderError = '';
+        function compile(type, src, name) {
+            const sh = gl.createShader(type);
+            gl.shaderSource(sh, src.trim());
+            gl.compileShader(sh);
+            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+                lastShaderError = gl.getShaderInfoLog(sh) || '(empty info log)';
+                return null;
+            }
+            return sh;
+        }
+
+        const vsSrc = document.getElementById('vs').textContent;
+        const fsSrc = document.getElementById('fs').textContent;
+        push('step 4: compile vertex shader (' + vsSrc.length + ' bytes)…');
+        const vs = compile(gl.VERTEX_SHADER, vsSrc, 'vertex');
+        if (!vs) {
+            setHud('err', 'VERTEX SHADER COMPILE FAILED:\n' + lastShaderError + '\n\nLog:\n' + log.join('\n'));
+            return;
+        }
+        push('step 5: compile fragment shader (' + fsSrc.length + ' bytes)…');
+        const fs = compile(gl.FRAGMENT_SHADER, fsSrc, 'fragment');
+        if (!fs) {
+            setHud('err', 'FRAGMENT SHADER COMPILE FAILED:\n' + lastShaderError + '\n\nLog:\n' + log.join('\n'));
+            return;
+        }
+
+        push('step 6: link program…');
+        const prog = gl.createProgram();
+        gl.attachShader(prog, vs);
+        gl.attachShader(prog, fs);
+        gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+            setHud('err', 'LINK ERROR:\n' + gl.getProgramInfoLog(prog));
+            return;
+        }
+        gl.useProgram(prog);
+        push('step 7: program linked OK');
+
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+        const aPos = gl.getAttribLocation(prog, 'aPos');
+        gl.enableVertexAttribArray(aPos);
+        gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+        const U = {};
+        ['uTime', 'uClipTime', 'uProgress', 'uGlobalTime', 'uResolution', 'uSeed',
+            'uBeat', 'uBeatPhase', 'uBarPhase', 'uEnergy',
+            'uPrimaryColor', 'uAccentColor', 'uIntensity', 'uMotionSpeed', 'uPulse']
+            .forEach(name => U[name] = gl.getUniformLocation(prog, name));
+
+        // Nebula palette: deep indigo primary + cyan accent
+        const test = {
+            uPrimaryColor: [0.05, 0.10, 0.30],   // deep indigo
+            uAccentColor: [0.20, 0.60, 0.90],    // electric cyan
+            uSeed: 2026,
+        };
+
+        // HALF-RES MODE: render at 0.5× resolution, CSS upscales to fullscreen.
+        // 4× fewer pixels = 4× speedup. Visual cost: slight blur (acceptable for nebula).
+        // Toggle with Q key.
+        let halfRes = true;
+        const RES_SCALE = halfRes ? 0.5 : 1.0;
+
+        function resize() {
+            const dpr = 1;
+            const scale = halfRes ? 0.5 : 1.0;
+            canvas.width = Math.floor(window.innerWidth * dpr * scale);
+            canvas.height = Math.floor(window.innerHeight * dpr * scale);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        // Q key: toggle half-res / full-res.
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'q' || e.key === 'Q') {
+                halfRes = !halfRes;
+                resize();
+            }
+        });
+        resize();
+
+        const start = performance.now();
+        let lastFrameT = 0, frameCount = 0, fpsSmooth = 0;
+        function frame() {
+            try {
+                const T = (performance.now() - start) / 1000;
+                const dt = lastFrameT > 0 ? (T - lastFrameT) : 0.016;
+                lastFrameT = T;
+                const instantFps = 1.0 / dt;
+                fpsSmooth = fpsSmooth > 0 ? fpsSmooth * 0.9 + instantFps * 0.1 : instantFps;
+
+                const beat = T * 2.0;
+                const beatPhase = beat - Math.floor(beat);
+                const energy = 0.5 + 0.4 * Math.sin(T * 0.5);
+
+                gl.uniform1f(U.uTime, T);
+                gl.uniform1f(U.uClipTime, T);
+                gl.uniform1f(U.uProgress, Math.min(T / 5, 1));
+                gl.uniform1f(U.uGlobalTime, T);
+                gl.uniform2f(U.uResolution, canvas.width, canvas.height);
+                gl.uniform1i(U.uSeed, test.uSeed);
+                gl.uniform1f(U.uBeat, beat);
+                gl.uniform1f(U.uBeatPhase, beatPhase);
+                gl.uniform1f(U.uBarPhase, (beat / 4) - Math.floor(beat / 4));
+                gl.uniform1f(U.uEnergy, energy);
+                gl.uniform3fv(U.uPrimaryColor, test.uPrimaryColor);
+                gl.uniform3fv(U.uAccentColor, test.uAccentColor);
+                gl.uniform1f(U.uIntensity, 0.4 + energy);
+                gl.uniform1f(U.uMotionSpeed, 0.6 + energy * 0.8);
+                // OPTIMIZATION: Math.pow(1-beatPhase, 4) → (1-beatPhase)²² (2 multiplies)
+                // Math.pow internally uses exp+log — slower than 2 multiplies.
+                const bpComp = 1 - beatPhase;
+                const bp2 = bpComp * bpComp;
+                const pulseValue = bp2 * bp2 * 0.4;  // (1-bp)^4 * 0.4
+                gl.uniform1f(U.uPulse, pulseValue);
+
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+                if (frameCount === 0) {
+                    const err = gl.getError();
+                    if (err !== gl.NO_ERROR) {
+                        setHud('err', 'GL ERROR after first drawArrays: 0x' + err.toString(16));
+                        return;
+                    }
+                }
+
+                frameCount++;
+                if (frameCount === 1) {
+                    setHud('ok', '✅ first frame rendered (loop alive), collecting FPS…');
+                } else if (frameCount % 5 === 0) {
+                    const resMode = halfRes ? 'half-res' : 'full-res';
+                    setHud('ok', '✅ nebula_raymarch  |  T=' + T.toFixed(1) + 's' +
+                        '  |  intensity=' + (0.4 + energy).toFixed(2) +
+                        '  |  pulse=' + pulseValue.toFixed(2) +
+                        '  |  FPS=' + fpsSmooth.toFixed(0) +
+                        '  |  ' + resMode + ' ' + canvas.width + 'x' + canvas.height +
+                        '  |  Q: toggle res');
+                }
+            } catch (e) {
+                setHud('err', 'FRAME ERROR at frameCount=' + frameCount + ': ' +
+                    (e && e.message ? e.message : String(e)));
+                console.error(e);
+                return;
+            }
+            requestAnimationFrame(frame);
+        }
+        push('step 8: starting render loop (40 volumetric steps, cost=4)…');
+        frame();
+    } catch (e) {
+        const errMsg = e && e.message ? e.message : String(e);
+        const shaderInfo = lastShaderError ? '\n\nLast shader error:\n' + lastShaderError : '';
+        setHud('err', 'EXCEPTION: ' + errMsg + shaderInfo + '\n\nLog:\n' + log.join('\n'));
+        console.error(e);
+    }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+[Start] Demo Runtime — loading demo.smt
+[OK] SMT loaded: duration=211.0s, 20 clips, 13 segments
+  clip 's1' effect='nebula_raymarch' opacity_tokens=1 progress_tokens=4 uniforms=5
+  clip 's2' effect='sphere_scene' opacity_tokens=1 progress_tokens=4 uniforms=3
+  clip 't1' effect='crossfade' opacity_tokens=1 progress_tokens=4 uniforms=0
+  clip 's3' effect='particle_swarm' opacity_tokens=1 progress_tokens=4 uniforms=3
+  clip 't2' effect='flash' opacity_tokens=1 progress_tokens=4 uniforms=2
+  clip 's4' effect='anxiety_mist' opacity_tokens=1 progress_tokens=4 uniforms=5
+  clip 't3' effect='crossfade' opacity_tokens=1 progress_tokens=4 uniforms=0
+  clip 's5' effect='morph_grid' opacity_tokens=1 progress_tokens=4 uniforms=3
+  clip 't4' effect='flash' opacity_tokens=1 progress_tokens=4 uniforms=2
+  clip 's6' effect='cozy_room_sdf' opacity_tokens=1 progress_tokens=4 uniforms=2
+  clip 't5' effect='crossfade' opacity_tokens=1 progress_tokens=4 uniforms=0
+  clip 's7' effect='morphing_figures' opacity_tokens=1 progress_tokens=4 uniforms=0
+  clip 't6' effect='crossfade' opacity_tokens=1 progress_tokens=4 uniforms=0
+  clip 'blm_bright' effect='bloom_bright' opacity_tokens=1 progress_tokens=4 uniforms=2
+  clip 'blm_blurh' effect='bloom_blur' opacity_tokens=1 progress_tokens=4 uniforms=1
+  clip 'blm_blurv' effect='bloom_blur' opacity_tokens=1 progress_tokens=4 uniforms=1
+  clip 'blm_add' effect='passthrough' opacity_tokens=1 progress_tokens=4 uniforms=0
+  clip 'vig' effect='vignette' opacity_tokens=1 progress_tokens=4 uniforms=2
+  clip 'grn' effect='grain' opacity_tokens=1 progress_tokens=4 uniforms=2
+  clip 'fin' effect='finish' opacity_tokens=1 progress_tokens=4 uniforms=0
+[Window] HWND=0000000000110714 created at (312,160) size 1296x759 (client 1280x720)
+[Window] Visible=true, foreground set
+[GL] NVIDIA GeForce GTX 750/PCIe/SSE2 / 3.3.0 NVIDIA 560.94
+[OK] 19 shader programs compiled
+[Loop] Entering render loop, duration=211.0s
+[Help] F1 = toggle FPS | F2 = capture BMP | F3 = toggle recording | min/max/avg tracked always
+[Loop] First frame rendered, T=0.003s
+[Quality] LOW (steps=24, FPS=23.8)
+[Capture] Saved shot_nebula.bmp (1280x720 → 640x360)
+[Loop] T=5.04s frames=141
+[Loop] T=10.04s frames=286
+[Loop] T=15.06s frames=432
+[Loop] T=20.08s frames=578
+[Loop] T=25.10s frames=721
+[Capture] Saved shot_sphere.bmp (1280x720 → 640x360)
+[Loop] T=30.10s frames=899
+[Quality] HIGH (steps=40, FPS=47.4)
+[Loop] T=35.13s frames=1119
+[Loop] T=40.14s frames=1342
+[Loop] T=45.15s frames=1569
+[Loop] T=50.17s frames=1802
+[Capture] Saved shot_particles.bmp (1280x720 → 640x360)
+[Loop] T=55.19s frames=2051
+[Loop] T=60.20s frames=2266
+[Loop] T=65.21s frames=2485
+[Loop] T=70.22s frames=2702
+[Loop] T=75.24s frames=2927
+[Capture] Saved shot_anxiety.bmp (1280x720 → 640x360)
+[Loop] T=80.26s frames=3142
+[Loop] T=85.27s frames=3358
+[Loop] T=90.28s frames=3575
+[Loop] T=95.30s frames=3784
+[Loop] T=100.32s frames=3993
+[Capture] Saved shot_morph_grid.bmp (1280x720 → 640x360)
+[Loop] T=105.35s frames=4202
+[Loop] T=110.37s frames=4413
+[Loop] T=115.38s frames=4622
+[Loop] T=120.40s frames=4846
+[Loop] T=125.40s frames=5061
+[Capture] Saved shot_cozy_room.bmp (1280x720 → 640x360)
+[Loop] T=130.42s frames=5266
+[Loop] T=135.44s frames=5476
+[Loop] T=140.44s frames=5676
+[Loop] T=145.46s frames=5884
+[Loop] T=150.48s frames=6087
+[Loop] T=155.50s frames=6299
+[Loop] T=160.51s frames=6498
+[Loop] T=165.52s frames=6710
+[Loop] T=170.52s frames=6916
+[Loop] T=175.55s frames=7121
+[Loop] T=180.56s frames=7329
+[Capture] Saved shot_morphing_figures.bmp (1280x720 → 640x360)
+[Loop] T=185.56s frames=7542
+[Loop] T=190.59s frames=7752
+[Loop] T=195.62s frames=7960
+[Loop] T=200.63s frames=8175
+[Loop] T=205.64s frames=8387
+[Loop] T=210.65s frames=8604
+[Done] Show finished at T=211.01s, frames=8617
+[Loop] Exited, total frames=8617
+[Stats] FPS over 211.02s (413 samples @ 0.5s window):
+  sampled:     min=23.32  max=55.36  avg=40.87  FPS
+  theoretical: 8617 frames / 211.02s = 40.84 FPS
+  range:       32.0 FPS (max-min = 32.0)
+  quality:     HIGH (nebula steps=40)
+  per-scene:
+    nebula               T=    0-   23s (  23s)  min= 23.3  max= 35.1  avg= 28.9  FPS  (44 samples)
+    transition_1         T=   23-   27s (   4s)  min= 27.5  max= 28.5  avg= 27.6  FPS  (8 samples)
+    sphere               T=   27-   48s (  21s)  min= 35.4  max= 55.3  avg= 44.0  FPS  (41 samples)
+    transition_2         T=   48-   52s (   4s)  min= 41.6  max= 49.8  avg= 48.4  FPS  (8 samples)
+    particle_swarm       T=   52-   73s (  21s)  min= 37.7  max= 55.2  avg= 44.2  FPS  (41 samples)
+    transition_3         T=   73-   77s (   4s)  min= 37.7  max= 54.1  avg= 45.5  FPS  (8 samples)
+    anxiety_mist         T=   77-   98s (  21s)  min= 37.7  max= 49.6  avg= 43.0  FPS  (41 samples)
+    transition_4         T=   98-  102s (   4s)  min= 34.6  max= 43.5  avg= 38.5  FPS  (8 samples)
+    morph_grid           T=  102-  123s (  21s)  min= 37.6  max= 53.3  avg= 42.9  FPS  (42 samples)
+    transition_5         T=  123-  127s (   4s)  min= 37.6  max= 45.7  avg= 41.2  FPS  (7 samples)
+    cozy_room            T=  127-  180s (  53s)  min= 34.5  max= 51.9  avg= 41.2  FPS  (104 samples)
+    transition_6         T=  180-  181s (   1s)  min= 37.6  max= 40.4  avg= 39.0  FPS  (2 samples)
+    morphing_figures     T=  181-  211s (  30s)  min= 35.8  max= 55.4  avg= 42.4  FPS  (59 samples)
+[Exit] Demo Runtime ended

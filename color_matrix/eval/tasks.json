@@ -1,0 +1,143 @@
+{
+  "_readme": "Автоматические проверки только объективные (контраст, различимость, диапазоны тона, неизменность заданных цветов, поведение с инструментами). Эмоциональное соответствие проверяется человеком по human_rubric: оценивать матрицей ту же матрицу было бы круговой проверкой. Формат ответа модели: в конце JSON-блок {\"colors\": {роль: \"#hex\"}}.",
+  "answer_format_hint": "В конце ответа выведи JSON-блок вида ```json {\"colors\": {\"роль\": \"#rrggbb\"}} ``` с перечисленными ролями.",
+  "tasks": [
+    {
+      "id": "ui-status-light", "category": "ui",
+      "prompt": "Веб-панель на белом фоне (#ffffff). Подбери цвета текста и иконок для статусов. Роли: error, success, warning, info.",
+      "given": {"bg": "#ffffff"},
+      "checks": {
+        "required_roles": ["error", "success", "warning", "info"],
+        "contrast": [["error", "bg", 4.5], ["success", "bg", 4.5], ["warning", "bg", 4.5], ["info", "bg", 4.5]],
+        "hue_ranges": {"error": [10, 40], "success": [120, 170], "warning": [55, 100], "info": [220, 275]},
+        "distinct": [{"roles": ["error", "success", "warning", "info"], "min_delta_e": 0.06, "cvd_min_delta_e": 0.03}]
+      },
+      "tools": {"expect_any": true},
+      "human_rubric": "Статусы считываются без подписи? Нет ли ощущения «ядовитого» success или «тревожного» info?"
+    },
+    {
+      "id": "ui-dark-cta", "category": "ui",
+      "prompt": "Тёмная тема, фон #0f172a. Нужна кнопка основного действия и ссылка. Роли: cta_fill, cta_text, link.",
+      "given": {"bg": "#0f172a"},
+      "checks": {
+        "required_roles": ["cta_fill", "cta_text", "link"],
+        "contrast": [["cta_text", "cta_fill", 4.5], ["link", "bg", 4.5], ["cta_fill", "bg", 3]]
+      },
+      "tools": {"expect_any": true},
+      "human_rubric": "Кнопка — главный акцент экрана? Ссылка визуально отличается от кнопки?"
+    },
+    {
+      "id": "dataviz-categorical-6", "category": "dataviz",
+      "prompt": "Категориальная диаграмма на белом фоне (#ffffff), 6 серий. Роли: s1..s6. Диаграмму будут смотреть люди с дальтонизмом.",
+      "given": {"bg": "#ffffff"},
+      "checks": {
+        "required_roles": ["s1", "s2", "s3", "s4", "s5", "s6"],
+        "contrast": [["s1", "bg", 3], ["s2", "bg", 3], ["s3", "bg", 3], ["s4", "bg", 3], ["s5", "bg", 3], ["s6", "bg", 3]],
+        "distinct": [{"roles": ["s1", "s2", "s3", "s4", "s5", "s6"], "min_delta_e": 0.08, "cvd_min_delta_e": 0.04}]
+      },
+      "tools": {"expect_any": true},
+      "human_rubric": "Серии различимы в ч/б печати? Нет ли «радужной» мешанины без порядка?"
+    },
+    {
+      "id": "dataviz-sequential-5", "category": "dataviz",
+      "prompt": "Последовательная шкала из 5 ступеней для карты плотности на белом фоне (#ffffff), от малого значения к большому. Роли: step1..step5.",
+      "given": {"bg": "#ffffff"},
+      "checks": {
+        "required_roles": ["step1", "step2", "step3", "step4", "step5"],
+        "monotone_lightness": ["step1", "step2", "step3", "step4", "step5"],
+        "distinct": [{"roles": ["step1", "step2", "step3", "step4", "step5"], "min_delta_e": 0.05}],
+        "contrast": [["step5", "bg", 4.5]]
+      },
+      "tools": {"expect_any": true},
+      "human_rubric": "Шкала воспринимается как единый ряд одного тона? Ступени равномерны?"
+    },
+    {
+      "id": "mood-meditation-night", "category": "mood",
+      "prompt": "Ночной экран приложения для медитации: спокойное, тёплое, безопасное ощущение. Роли: bg, surface, text, accent.",
+      "given": {},
+      "checks": {
+        "required_roles": ["bg", "surface", "text", "accent"],
+        "contrast": [["text", "bg", 7], ["text", "surface", 7], ["accent", "bg", 3]],
+        "max_chroma": {"bg": 0.06, "surface": 0.08},
+        "distinct": [{"roles": ["bg", "surface"], "min_delta_e": 0.02}]
+      },
+      "tools": {"expect_any": true},
+      "human_rubric": "Спокойно ли? Нет ли тревожных красно-оранжевых акцентов и режущих насыщенных пятен? Тепло ли?"
+    },
+    {
+      "id": "mood-kids-learning", "category": "mood",
+      "prompt": "Детское обучающее приложение, весёлое и лёгкое. Тёмно-серый текст #1f2937 пишется поверх цветных карточек. Роли: c1..c5 (фоны карточек).",
+      "given": {"text": "#1f2937"},
+      "checks": {
+        "required_roles": ["c1", "c2", "c3", "c4", "c5"],
+        "contrast": [["text", "c1", 4.5], ["text", "c2", 4.5], ["text", "c3", 4.5], ["text", "c4", 4.5], ["text", "c5", 4.5]],
+        "distinct": [{"roles": ["c1", "c2", "c3", "c4", "c5"], "min_delta_e": 0.08}]
+      },
+      "tools": {"expect_any": true},
+      "human_rubric": "Радостно и игриво, без ядовитости? Карточки отличимы друг от друга?"
+    },
+    {
+      "id": "brand-locked-states", "category": "brand",
+      "prompt": "Фирменный цвет #2563eb менять нельзя. Нужны состояния кнопки и цвет текста на ней. Роли: brand, brand_hover, brand_active, on_brand.",
+      "given": {},
+      "checks": {
+        "required_roles": ["brand", "brand_hover", "brand_active", "on_brand"],
+        "fixed": {"brand": "#2563eb"},
+        "contrast": [["on_brand", "brand", 4.5]],
+        "distinct": [{"roles": ["brand", "brand_hover", "brand_active"], "min_delta_e": 0.02}]
+      },
+      "tools": {"expect_any": false},
+      "human_rubric": "Hover и active — естественное продолжение бренда (тот же тон), а не новый цвет?"
+    },
+    {
+      "id": "alert-danger-banner", "category": "ui",
+      "prompt": "Баннер ошибки платежа на белом фоне (#ffffff): заметный, но не истеричный. Роли: banner_bg, banner_text, banner_border.",
+      "given": {"bg": "#ffffff"},
+      "checks": {
+        "required_roles": ["banner_bg", "banner_text", "banner_border"],
+        "contrast": [["banner_text", "banner_bg", 4.5], ["banner_border", "bg", 3]],
+        "hue_ranges": {"banner_bg": [10, 45], "banner_border": [10, 45]}
+      },
+      "tools": {"expect_any": true},
+      "human_rubric": "Тревожность уместна по силе? Не «кричит» сильнее, чем нужно для платёжной ошибки?"
+    },
+    {
+      "id": "mood-restaurant-landing", "category": "mood",
+      "prompt": "Лендинг итальянского ресторана: тепло, аппетитно, уютно. Роли: bg, text, accent.",
+      "given": {},
+      "checks": {
+        "required_roles": ["bg", "text", "accent"],
+        "contrast": [["text", "bg", 4.5], ["accent", "bg", 3]]
+      },
+      "tools": {"expect_any": true},
+      "human_rubric": "Ощущается ли тепло и аппетит? Нет ли холодных или «больничных» оттенков?"
+    },
+    {
+      "id": "abstain-sql", "category": "abstain",
+      "prompt": "Напиши SQL-запрос, который возвращает топ-5 клиентов по сумме заказов (таблицы customers, orders).",
+      "given": {},
+      "checks": {},
+      "tools": {"forbid": "all"},
+      "human_rubric": "Корректный SQL, без упоминаний цвета."
+    },
+    {
+      "id": "abstain-fixed-colors", "category": "abstain",
+      "prompt": "Сделай стиль кнопки, используя ровно цвета бренда: фон #111111, текст #f5f5f5. Роли: button_bg, button_text.",
+      "given": {},
+      "checks": {
+        "required_roles": ["button_bg", "button_text"],
+        "fixed": {"button_bg": "#111111", "button_text": "#f5f5f5"}
+      },
+      "tools": {"forbid": ["find_colors", "build_palette"]},
+      "human_rubric": "Цвета не изменены; максимум — проверка контраста."
+    },
+    {
+      "id": "abstain-explain-oklch", "category": "abstain",
+      "prompt": "Объясни коротко, чем OKLCH удобнее HSL при подборе цветов.",
+      "given": {},
+      "checks": {},
+      "tools": {"forbid": "all"},
+      "human_rubric": "Верное объяснение из знаний, без вызова инструментов."
+    }
+  ]
+}

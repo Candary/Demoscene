@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>crossfade.frag — preview</title>
+<style>
+  body { margin: 0; background: #000; overflow: hidden; font-family: monospace; }
+  canvas { display: block; width: 100vw; height: 100vh; image-rendering: auto; }
+  .hud { position: absolute; top: 8px; left: 8px; color: #6f6; font: 12px monospace;
+         background: rgba(0,0,0,0.85); padding: 8px 12px; border-radius: 4px; max-width: 95vw; white-space: pre-wrap; }
+  .hud.err { color: #f66; } .hud.ok { color: #6f6; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud" id="hud">init…</div>
+<canvas id="texA" width="512" height="512" style="display:none"></canvas>
+<canvas id="texB" width="512" height="512" style="display:none"></canvas>
+
+<script id="vs" type="x-shader/x-vertex">#version 300 es
+in vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+</script>
+
+<script id="fs" type="x-shader/x-fragment">#version 300 es
+precision highp float;
+precision highp int;
+out vec4 FragColor;
+uniform float uTime; uniform float uClipTime; uniform float uProgress;
+uniform float uGlobalTime; uniform vec2 uResolution; uniform int uSeed;
+uniform float uBeat; uniform float uBeatPhase; uniform float uBarPhase; uniform float uEnergy;
+uniform sampler2D uA; uniform sampler2D uB;
+void main() {
+    vec2 uv = gl_FragCoord.xy / uResolution;
+    vec4 a = texture(uA, uv);
+    vec4 b = texture(uB, uv);
+    FragColor = mix(a, b, uProgress);
+}
+</script>
+
+<script>
+(function () {
+    const canvas = document.getElementById('c');
+    const hud = document.getElementById('hud');
+    const log = [];
+    function setHud(cls, msg) { hud.className = 'hud ' + cls; hud.textContent = msg; }
+    function push(msg) { log.push(msg); setHud('', log.join('\n')); }
+
+    function makeTex(id, colors, label) {
+        const c = document.getElementById(id);
+        const ctx = c.getContext('2d');
+        const g = ctx.createLinearGradient(0, 0, 512, 512);
+        g.addColorStop(0, colors[0]); g.addColorStop(1, colors[1]);
+        ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 512);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 64px monospace'; ctx.textAlign = 'center';
+        ctx.fillText(label, 256, 290);
+        return c;
+    }
+
+    try {
+        push('step 1: get webgl2 context…');
+        const gl = canvas.getContext('webgl2', { antialias: false, premultipliedAlpha: false });
+        if (!gl) { setHud('err', 'ERROR: WebGL2 не поддерживается.'); return; }
+        push('step 2: ' + gl.getParameter(gl.VERSION));
+
+        let lastShaderError = '';
+        function compile(type, src, name) {
+            const sh = gl.createShader(type); gl.shaderSource(sh, src.trim()); gl.compileShader(sh);
+            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) { lastShaderError = gl.getShaderInfoLog(sh) || '(empty)'; return null; }
+            return sh;
+        }
+        const vsSrc = document.getElementById('vs').textContent;
+        const fsSrc = document.getElementById('fs').textContent;
+        push('step 3: compile shaders (' + fsSrc.length + ' bytes fs)…');
+        const vs = compile(gl.VERTEX_SHADER, vsSrc, 'vertex');
+        if (!vs) { setHud('err', 'VERTEX FAIL:\n' + lastShaderError); return; }
+        const fs = compile(gl.FRAGMENT_SHADER, fsSrc, 'fragment');
+        if (!fs) { setHud('err', 'FRAGMENT FAIL:\n' + lastShaderError); return; }
+
+        const prog = gl.createProgram(); gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { setHud('err', 'LINK FAIL:\n' + gl.getProgramInfoLog(prog)); return; }
+        gl.useProgram(prog); push('step 4: linked OK');
+
+        const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+        const aPos = gl.getAttribLocation(prog, 'aPos');
+        gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+        const canvasA = makeTex('texA', ['#ff3030', '#3030ff'], 'A');
+        const canvasB = makeTex('texB', ['#30ff30', '#ff30ff'], 'B');
+        function upload(c, unit) {
+            const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            return t;
+        }
+        upload(canvasA, 0); upload(canvasB, 1);
+
+        const U = {};
+        ['uTime','uClipTime','uProgress','uGlobalTime','uResolution','uSeed',
+         'uBeat','uBeatPhase','uBarPhase','uEnergy','uA','uB']
+            .forEach(n => U[n] = gl.getUniformLocation(prog, n));
+        gl.uniform1i(U.uA, 0); gl.uniform1i(U.uB, 1);
+
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; gl.viewport(0, 0, canvas.width, canvas.height); }
+        window.addEventListener('resize', resize); resize();
+
+        const start = performance.now(); let lastT = 0, fc = 0, fps = 0;
+        const CYCLE = 4.0;
+        function frame() {
+            try {
+                const T = (performance.now() - start) / 1000;
+                const dt = lastT > 0 ? (T - lastT) : 0.016; lastT = T;
+                const inst = 1.0 / dt; fps = fps > 0 ? fps * 0.9 + inst * 0.1 : inst;
+                const progress = (T % CYCLE) / CYCLE;
+                const beat = T * 2.0, bp = beat - Math.floor(beat);
+                gl.uniform1f(U.uTime, T); gl.uniform1f(U.uClipTime, T);
+                gl.uniform1f(U.uProgress, progress); gl.uniform1f(U.uGlobalTime, T);
+                gl.uniform2f(U.uResolution, canvas.width, canvas.height);
+                gl.uniform1i(U.uSeed, 2026); gl.uniform1f(U.uBeat, beat);
+                gl.uniform1f(U.uBeatPhase, bp); gl.uniform1f(U.uBarPhase, (beat/4) - Math.floor(beat/4));
+                gl.uniform1f(U.uEnergy, 0.5);
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                if (fc === 0) { const e = gl.getError(); if (e !== gl.NO_ERROR) { setHud('err', 'GL ERROR: 0x' + e.toString(16)); return; } }
+                fc++;
+                if (fc === 1) setHud('ok', '✅ first frame rendered');
+                else if (fc % 5 === 0) setHud('ok', '✅ crossfade  |  T=' + T.toFixed(1) + 's  |  progress=' + progress.toFixed(2) + '  |  FPS=' + fps.toFixed(0) + '  |  res=' + canvas.width + 'x' + canvas.height + '  |  cycle=' + CYCLE + 's');
+            } catch (e) { setHud('err', 'FRAME ERROR: ' + (e.message || e)); console.error(e); return; }
+            requestAnimationFrame(frame);
+        }
+        push('step 5: starting render loop (cycle=' + CYCLE + 's)…');
+        frame();
+    } catch (e) {
+        setHud('err', 'EXCEPTION: ' + (e.message || e) + (lastShaderError ? '\nShader: ' + lastShaderError : '') + '\nLog:\n' + log.join('\n'));
+        console.error(e);
+    }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>morph_grid.frag — preview</title>
+<style>
+  body { margin: 0; background: #000; overflow: hidden; font-family: monospace; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  .hud {
+    position: absolute; top: 8px; left: 8px;
+    color: #6f6; font: 12px monospace;
+    background: rgba(0,0,0,0.85); padding: 8px 12px; border-radius: 4px;
+    max-width: 95vw; white-space: pre-wrap;
+  }
+  .hud.err { color: #f66; }
+  .hud.ok  { color: #6f6; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud" id="hud">init…</div>
+
+<script id="vs" type="x-shader/x-vertex">#version 300 es
+in vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+</script>
+
+<script id="fs" type="x-shader/x-fragment">#version 300 es
+precision highp float;
+precision highp int;
+
+out vec4 FragColor;
+
+uniform float uTime;
+uniform float uClipTime;
+uniform float uProgress;
+uniform float uGlobalTime;
+uniform vec2  uResolution;
+uniform int   uSeed;
+uniform float uBeat;
+uniform float uBeatPhase;
+uniform float uBarPhase;
+uniform float uEnergy;
+
+uniform vec3  uColor;
+uniform float uMorph;
+uniform float uSpeed;
+
+const float PI  = 3.14159265359;
+const float TAU = 6.28318530718;
+const vec3  CELL_SIZE = vec3(1.5);
+const float GRID_BOUND = 3.75;
+
+float rng(float n) {
+    uint i = floatBitsToUint(n) ^ (uint(uSeed) * 0x9E3779B1u);
+    i ^= i >> 16u; i *= 0x85ebca6bu;
+    i ^= i >> 13u; i *= 0xc2b2ae35u;
+    i ^= i >> 16u;
+    return float(i) * (1.0 / 4294967296.0);
+}
+
+float sdSphere(vec3 p, float r) { return length(p) - r; }
+
+float sdBox(vec3 p, vec3 b) {
+    vec3 q = abs(p) - b;
+    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+float mapScene(vec3 q) {
+    // Bounding: вне сетки возвращаем SDF bounding box (не 1e9!),
+    // чтобы raymarch приближался к grid'у, а не пропускал его.
+    vec3 absq = abs(q);
+    float maxComp = max(max(absq.x, absq.y), absq.z);
+    float outsideMask = step(GRID_BOUND, maxComp);
+
+    // SDF bounding box — negative внутри, positive снаружи.
+    float boundSDF = sdBox(q, vec3(GRID_BOUND));
+
+    vec3 p = mod(q + CELL_SIZE * 0.5, CELL_SIZE) - CELL_SIZE * 0.5;
+
+    vec3 cellId = floor((q + CELL_SIZE * 0.5) / CELL_SIZE);
+    float cellHash = rng(cellId.x * 1.7 + cellId.y * 2.3 + cellId.z * 3.1 + 0.5);
+
+    float perCellMorph = uMorph + 0.3 * sin(cellHash * TAU + uTime * uSpeed * 0.5);
+    perCellMorph = clamp(perCellMorph, 0.0, 1.0);
+
+    float dCube = sdBox(p, vec3(0.32));
+    float dSphere = sdSphere(p, 0.40);
+    float dInside = mix(dCube, dSphere, perCellMorph);
+
+    return mix(dInside, boundSDF, outsideMask);
+}
+
+vec3 calcNormal(vec3 p) {
+    const vec2 k = vec2(1.0, -1.0);
+    const float e = 0.001;
+    return normalize(
+        k.xyy * mapScene(p + k.xyy * e) +
+        k.yyx * mapScene(p + k.yyx * e) +
+        k.yxy * mapScene(p + k.yxy * e) +
+        k.xxx * mapScene(p + k.xxx * e)
+    );
+}
+
+vec2 rayMarch(vec3 ro, vec3 rd) {
+    vec3 oc = ro;
+    float b = dot(oc, rd);
+    float c = dot(oc, oc) - 36.0;
+    float disc = b * b - c;
+    if (disc < 0.0) return vec2(-1.0, 0.0);
+    float tStart = max(0.0, -b - sqrt(disc));
+    float t = tStart;
+    const int STEPS = 32;
+    const float MAX_DIST = 30.0;
+    for (int i = 0; i < STEPS; i++) {
+        vec3 p = ro + rd * t;
+        float d = mapScene(p);
+        if (d < 0.001) return vec2(t, 1.0);
+        if (t > MAX_DIST) break;
+        t += d;
+    }
+    return vec2(-1.0, 0.0);
+}
+
+vec3 lightDir() {
+    float a = uTime * 0.3;
+    return normalize(vec3(sin(a), 0.7, cos(a)));
+}
+
+vec3 backgroundColor(vec3 rd) {
+    float t = 0.5 + 0.5 * rd.y;
+    vec3 base = mix(vec3(0.03, 0.03, 0.05), vec3(0.08, 0.09, 0.13), t);
+    return base + uColor * 0.04 * (1.0 - t);
+}
+
+vec3 aces(vec3 c) {
+    return (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);
+}
+
+void main() {
+    vec2 fragUv = gl_FragCoord.xy / uResolution;
+    vec2 uv = (fragUv * 2.0 - 1.0) * vec2(uResolution.x / uResolution.y, 1.0);
+
+    float cam_t = uTime * 0.1 * uSpeed;
+    vec3 ro = vec3(sin(cam_t) * 8.0, 3.5, cos(cam_t) * 8.0);
+    vec3 ta = vec3(0.0);
+    vec3 fwd = normalize(ta - ro);
+    vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), fwd));
+    vec3 up = cross(fwd, right);
+    vec3 rd = normalize(fwd + uv.x * right + uv.y * up);
+
+    vec3 bg = backgroundColor(rd);
+    vec2 hit = rayMarch(ro, rd);
+
+    vec3 col;
+    if (hit.x < 0.0) {
+        col = bg;
+    } else {
+        vec3 p = ro + rd * hit.x;
+        vec3 n = calcNormal(p);
+        vec3 ld = lightDir();
+        float diff = max(dot(n, ld), 0.0);
+        float amb = 0.18 + 0.12 * max(dot(n, vec3(0.0, 1.0, 0.0)), 0.0);
+        vec3 viewDir = -rd;
+        vec3 halfDir = normalize(ld + viewDir);
+        float spec = pow(max(dot(n, halfDir), 0.0), 32.0);
+
+        vec3 cellId = floor((p + CELL_SIZE * 0.5) / CELL_SIZE);
+        float cellHash = rng(cellId.x * 1.7 + cellId.y * 2.3 + cellId.z * 3.1 + 0.5);
+        vec3 surfColor = uColor * (0.85 + 0.30 * cellHash);
+        float rim = pow(1.0 - abs(dot(n, viewDir)), 2.5);
+        surfColor += uColor * rim * 0.4;
+        vec3 surface = surfColor * (amb + diff * 0.8) + vec3(1.0) * spec * 0.5;
+        float fog = 1.0 - exp(-hit.x * 0.07);
+        col = mix(surface, bg, fog * 0.5);
+    }
+
+    vec2 vd = fragUv - 0.5;
+    col *= 1.0 - 0.30 * dot(vd, vd) * 2.0;
+    col = aces(col);
+    col = pow(clamp(col, 0.0, 1.0), vec3(1.0 / 2.2));
+
+    FragColor = vec4(col, 1.0);
+}
+</script>
+
+<script>
+(function () {
+    const canvas = document.getElementById('c');
+    const hud = document.getElementById('hud');
+    const log = [];
+    function setHud(cls, msg) { hud.className = 'hud ' + cls; hud.textContent = msg; }
+    function push(msg) { log.push(msg); setHud('', log.join('\n')); }
+
+    try {
+        push('step 1: get webgl2 context…');
+        const gl = canvas.getContext('webgl2', { antialias: false, premultipliedAlpha: false });
+        if (!gl) { setHud('err', 'ERROR: WebGL2 не поддерживается.'); return; }
+        push('step 2: ' + gl.getParameter(gl.VERSION));
+        push('step 3: renderer=' + gl.getParameter(gl.RENDERER).substring(0, 60));
+
+        let lastShaderError = '';
+        function compile(type, src, name) {
+            const sh = gl.createShader(type);
+            gl.shaderSource(sh, src.trim());
+            gl.compileShader(sh);
+            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+                lastShaderError = gl.getShaderInfoLog(sh) || '(empty info log)';
+                return null;
+            }
+            return sh;
+        }
+
+        const vsSrc = document.getElementById('vs').textContent;
+        const fsSrc = document.getElementById('fs').textContent;
+        push('step 4: compile vertex shader (' + vsSrc.length + ' bytes)…');
+        const vs = compile(gl.VERTEX_SHADER, vsSrc, 'vertex');
+        if (!vs) {
+            setHud('err', 'VERTEX SHADER COMPILE FAILED:\n' + lastShaderError + '\n\nLog:\n' + log.join('\n'));
+            return;
+        }
+        push('step 5: compile fragment shader (' + fsSrc.length + ' bytes)…');
+        const fs = compile(gl.FRAGMENT_SHADER, fsSrc, 'fragment');
+        if (!fs) {
+            setHud('err', 'FRAGMENT SHADER COMPILE FAILED:\n' + lastShaderError + '\n\nLog:\n' + log.join('\n'));
+            return;
+        }
+
+        push('step 6: link program…');
+        const prog = gl.createProgram();
+        gl.attachShader(prog, vs);
+        gl.attachShader(prog, fs);
+        gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+            setHud('err', 'LINK ERROR:\n' + gl.getProgramInfoLog(prog));
+            return;
+        }
+        gl.useProgram(prog);
+        push('step 7: program linked OK');
+
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+        const aPos = gl.getAttribLocation(prog, 'aPos');
+        gl.enableVertexAttribArray(aPos);
+        gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+        const U = {};
+        ['uTime','uClipTime','uProgress','uGlobalTime','uResolution','uSeed',
+         'uBeat','uBeatPhase','uBarPhase','uEnergy','uColor','uMorph','uSpeed']
+            .forEach(name => U[name] = gl.getUniformLocation(prog, name));
+
+        // Cyan-ish palette for "neutral/tension/delight" mood.
+        const test = {
+            uColor: [0.10, 0.50, 0.80],  // cyan
+            uSeed: 2026,
+        };
+
+        function resize() {
+            const dpr = 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        const start = performance.now();
+        let lastFrameT = 0, frameCount = 0, fpsSmooth = 0;
+        function frame() {
+            try {
+                const T = (performance.now() - start) / 1000;
+                const dt = lastFrameT > 0 ? (T - lastFrameT) : 0.016;
+                lastFrameT = T;
+                const instantFps = 1.0 / dt;
+                fpsSmooth = fpsSmooth > 0 ? fpsSmooth * 0.9 + instantFps * 0.1 : instantFps;
+
+                // Циклический morph: 0 → 1 → 0 за 8 секунд
+                const cycleT = (T % 8.0) / 8.0;
+                const morph = 0.5 - 0.5 * Math.cos(cycleT * 2.0 * Math.PI);  // smooth 0..1..0
+
+                const beat = T * 2.0;
+                const beatPhase = beat - Math.floor(beat);
+                const energy = 0.5 + 0.4 * Math.sin(T * 0.5);
+
+                gl.uniform1f(U.uTime, T);
+                gl.uniform1f(U.uClipTime, T);
+                gl.uniform1f(U.uProgress, Math.min(T / 5, 1));
+                gl.uniform1f(U.uGlobalTime, T);
+                gl.uniform2f(U.uResolution, canvas.width, canvas.height);
+                gl.uniform1i(U.uSeed, test.uSeed);
+                gl.uniform1f(U.uBeat, beat);
+                gl.uniform1f(U.uBeatPhase, beatPhase);
+                gl.uniform1f(U.uBarPhase, (beat / 4) - Math.floor(beat / 4));
+                gl.uniform1f(U.uEnergy, energy);
+                gl.uniform3fv(U.uColor, test.uColor);
+                gl.uniform1f(U.uMorph, morph);
+                gl.uniform1f(U.uSpeed, 0.5 + energy);
+
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+                // Check for GL errors after first draw
+                if (frameCount === 0) {
+                    const err = gl.getError();
+                    if (err !== gl.NO_ERROR) {
+                        setHud('err', 'GL ERROR after first drawArrays: 0x' + err.toString(16) +
+                               '\n(0x500=INVALID_ENUM, 0x501=INVALID_VALUE, 0x502=INVALID_OPERATION, 0x505=OUT_OF_MEMORY)');
+                        return;
+                    }
+                }
+
+                frameCount++;
+                // First frame: confirm loop is alive.
+                if (frameCount === 1) {
+                    setHud('ok', '✅ first frame rendered (loop alive), collecting FPS…');
+                } else if (frameCount % 5 === 0) {
+                    setHud('ok', '✅ morph_grid  |  T=' + T.toFixed(1) + 's' +
+                           '  |  morph=' + morph.toFixed(2) +
+                           '  |  speed=' + (0.5 + energy).toFixed(2) +
+                           '  |  FPS=' + fpsSmooth.toFixed(0) +
+                           '  |  res=' + canvas.width + 'x' + canvas.height +
+                           '  |  drag to rotate');
+                }
+            } catch (e) {
+                setHud('err', 'FRAME ERROR at frameCount=' + frameCount + ': ' +
+                       (e && e.message ? e.message : String(e)) +
+                       '\nStack: ' + (e && e.stack ? e.stack.split('\n').slice(0, 3).join(' | ') : 'n/a'));
+                console.error(e);
+                return;  // stop loop on error
+            }
+            requestAnimationFrame(frame);
+        }
+        push('step 8: starting render loop (morph cycle 8s, 5x5x5 grid of cells)…');
+        frame();
+    } catch (e) {
+        const errMsg = e && e.message ? e.message : String(e);
+        const shaderInfo = lastShaderError ? '\n\nLast shader error:\n' + lastShaderError : '';
+        setHud('err', 'EXCEPTION: ' + errMsg + shaderInfo + '\n\nLog:\n' + log.join('\n'));
+        console.error(e);
+    }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+# meta.auto — автоподстановка для sigil-протокола (ведёт ассистент)
+# Task 49, user #ok 2026-10-30. Файловый артефакт; survive via zip + canonical, как roadmap.md.
+# Пользователь пишет токен слева → я подставляю значение справа (или разрешаю правило).
+
+[v]              default=maxTask            # max номер задачи из roadmap.md
+[md5]            default=latestZip          # md5sum download/demo_intro_latest.zip
+[md5:milestone]  = c0cbce51ba1b11f90cbfc474c0b2d70a   # замороженная v43_WORKING
+[status]         default=auto               # из roadmap: последний подтверждённый статус
+[env:mine]       = x64,GTX750,driver560.94,Win11   # закреплено один раз; менять при смене GPU/драйвера
+[trace]          default=auto               # attached если файл прикреплён, иначе missing
+[scope]          default=infer              # я вывожу scope из описания фичи
+[avoid:default]  = opengl_loader.h, build_msvc.bat, build_mingw.bat, pandoc_docx/, color_matrix/, cozy_engine/   # НЕ трогать, если не сказано явно. v1.6+: pandoc_docx/ protected (test mode pipeline)
+[revert:default] = lastgood                 # последняя версия со status=working
+[revert:lastgood]= <резолвится из roadmap: latest status=working>
+[prio:default]   = optional
+[demo:duration]  = default=60   # длина демо в секундах. По умолчанию 60 (1 минута). Указать явно для другой длины: [demo:duration]=180 (3 мин). Влияет на: Scene Manager timing, fixed ending fade, after-predicate duration check.
+[demo:fade_out]  = default=3   # длительность fade-out в секундах в конце демо (плавный уход в чёрный). При [demo:duration]=N, fade начинается на секунде N, заканчивается на N+[demo:fade_out].
+[after:default]  = run.contains("First frame rendered") AND NOT run.contains("[FATAL]") AND run.contains("[Exit] Main loop ended (code 0)")   # A7 v2.1 (Task 56 live): run.line→run.contains (CRLF-robust; line-exact хрупок к \r). Fixed-string под -F БЕЗ regex-экранирования (не \[OK\] а [OK]). run.contains с точной строкой безопасен от code 0xC0000005 (та имеет 0x..) а не 0).
+[btb:source]     = btb_stats.json           # где живёт состояние BTB (read-modify-write каждый ход)
+# === Task 55 (review fixes A7/A10) ===
+# after-DSL семантика (A7): contains/run.contains/build.contains = fixed-string (-F); line()/run.line() = line-exact;
+#   count(STR)==N = count LINES containing fixed-string; precedence NOT>AND>OR; скобки; голая строка НЕ shorthand (требуется contains()).
+#   scope: build.* = BUILD-секция trace.log; run.* = RUN-секция (между "=== RUN START ===" и концом). Фикс: grep("nebula")==0 не ломается на "nebula.glsl" в выводе компилятора.
+[status:levels] = unverified → passed → confirmed   # A10: after-pass = passed (log-milestone OK, визуал не проверен); user @status=confirmed или #milestone = confirmed
+[lastgood]      = only confirmed   # A10: lastgood указывает ТОЛЬКО на confirmed (не на after-passed) — защита от «log-passed но чёрный экран»
+[md5:canonical] = chat-printed    # A6: md5 напечатанный в #ack-блоке чата = canonical checkpoint; sandbox-md5 сверяется с последним напечатанным (chat не откатывается)
+[md5:v47]         = b0b6413bf92a4fbbbf489089797771e2   # Task 58: v47 confirmed. ARCHIVED → download/archive/
+# [revert:lastgood] → v49 (v48 archived, v47 archived, v43 archived)
+[glsl:validator] = scripts/validate_glsl.py   # Task 59: run before !*shader* delivery; errors=blocking
+[md5:v48]         = 0906644ad7d18ac8275e54997a67823c   # Task 61 #milestone: v48 confirmed. ARCHIVED (historical reference).
+[md5:v49]         = 6539b1198d2210920ba121172d3f302a   # Task 66 #milestone: v49 confirmed (lastgood). ACTIVE.
+# [revert:lastgood] → v49 (latest confirmed; v48 archived)
+# Archived: v43 (c0cb…), v47 (b0b6413…), latest (15d8025…) → download/archive/
+# === Task 64 (booster v2, user #ok booster-still-on) ===
+[booster:v2]        = schema 1.1, 6 new sections: compat_layer, llm_layers, query_api, llm_self_test, not_for_llm_prompt, validation_pipeline
+[booster:canonical] = download/demo_intro/booster_final.json   # working copy v1.1 (upload/booster_final.json = v1.0 read-only original)
+[booster:query]     = scripts/query_booster.py --code '<partial>' [--stage fragment|vertex|compute] [--top 5] [--self-test]
+#   triggers: T1 (≥3 candidates choice point) T2 (unfamiliar context) T3 (deep nesting ≥3 levels) T4 (after !fix style anomaly)
+#   hard_cap: 15 calls per !*shader* task. fallback: L1 static + L3 self_test only if script unavailable.
+[booster:patcher]   = scripts/apply_booster_v2.py   # idempotent: rebuilds v1.1 from upload v1.0
+# === Task 65 (!fix *shader* nebula upper-cyan, first booster v1.1 pipeline run) ===
+[v:49]              = upper-cyan-fix CONFIRMED (Task 66 #milestone, after-VERIFIED 5/5)   # v48→v49; booster v1.1 first end-to-end cycle closed; FROZEN 171063 bytes, MD5 6539b1198d2210920ba121172d3f302a
+[booster:first-measured] = !fix *shader* Task 65: L1+L2+L4+L5 closed (L2 hit_rate 2/2, validator 4/4, after 5/5)
+# === Pandoc test-mode pipeline (user #ok use-existing-verbs 2026-11-01) ===
+[docx:pipeline]         = pandoc-accepted   # v1.6 visual accepted by user 2026-11-01. Next v1.7 via pandoc. Python generator = backup (parallel until v1.8)
+[docx:python-generator] = scripts/gen_sigil_btb_doc.py   # legacy backup (active, unchanged per TZ rule)
+[docx:pandoc-generator] = pandoc_docx/build.py           # test mode (35-line Pandoc-based)
+[docx:meta]             = pandoc_docx/meta.yaml          # single source of truth для version/title/date
+[docx:content]          = pandoc_docx/content/           # 19 .md files + media/ (4 PNGs)
+[docx:golden]           = pandoc_docx/golden/v1.6.docx   # reference from Python generator (for comparison)
+[docx:rollback]         = !remove pandoc-pipeline        # disable Pandoc, restore Python, preserve pandoc_docx/ → legacy/
+[docx:snapshot]         = pre-pandoc-migration           # rollback point snapshot (download/snapshots/pre-pandoc-migration.zip)
+[docx:backup]           = download/pandoc_docx_backup.zip # sandbox persistence backup
+# === Color Matrix integration (Task 68, 2026-11-01) ===
+[color_matrix:v11]          = installed, 16.7M RGB colors, NPZ 3.9MB
+[color_matrix:reader]       = color_matrix/output/color_matrix_python/reader.py
+[color_matrix:tools]        = color_matrix/output/color_matrix_python/tools.py (8 tools: describe/find_colors/check_contrast/build_palette/check_palette + find_multi_colors/find_animation_path/check_palette_harmony)
+[color_matrix:search]       = color_matrix/output/color_matrix_python/search.py (random mode + Russian aliases)
+[color_matrix:policy]       = color_matrix/policy/shader_color_policy.md (shader context, mood>harmony>perf>contrast)
+[color_matrix:parser]       = scripts/anim_parser.py (%anim[...] → !feat *shader* expansion)
+[color_matrix:catalog]      = download/color_catalog.md (sequential color log by Task)
+[color_matrix:rollback]     = !remove color-matrix (disable + preserve в legacy/)
+[color_matrix:snapshot]     = pre-color-matrix-migration (download/snapshots/pre-color-matrix-migration.zip)
+[color_matrix:backup]       = download/color_matrix_backup.zip (sandbox persistence)
+[color_matrix:glsl-helpers] = from_glsl(vec3)→RGB, to_glsl(RGB)→vec3 (in tools.py)
+[color_matrix:rndm]         = find_colors feel=X random=True (user "rndm" request)
+[color_matrix:aliases]      = Russian→English: тревога→anxiety, тепло→warmth, etc.
+# === Cozy Engine v1.2 (Task 69, user #ok install-cozy-engine) ===
+[cozy_engine:installed]      = v1.2, 31967 scenes (optimized), 2.1 MB data (98% savings from 107 MB)
+[cozy_engine:code]           = cozy_engine/ (10 .py files, 2147 lines)
+[cozy_engine:reader]         = cozy_engine/data/cozy_scenes.npz (0.9 MB, 32K scenes, trimmed meta, precomputed weights)
+[cozy_engine:matrix]         = cozy_engine/data/cozy_matrix.npz (1.2 MB, 64^3, scan-corrected, 32K scenes)
+[cozy_engine:tools]          = 14 unified (8 Color Matrix + 6 Cozy: scene_plan/suggest/evidence/primitives/instantiate/palette)
+[cozy_engine:policy]         = cozy_engine/policy/cozy_policy.md
+[cozy_engine:primitives]     = 28 recipes, 27 objects, box/cylinder/sphere parts
+[cozy_engine:vocab]          = 64 atoms (27 objects + 9 materials + 5 light + 5 palette + 9 quality + 8 rooms + 1 reserved), 64 responses
+[cozy_engine:color_link]     = colors.py bridge to Color Matrix v11 (12 color_* response features)
+[cozy_engine:unified]        = UnifiedToolbox (Color + Cozy in one dispatch)
+[cozy_engine:start]          = cozy_engine/start.py (singleton cache: reader/store/matrix/toolbox)
+[cozy_engine:rollback]       = !remove cozy-engine (disable + preserve in legacy/)
+[cozy_engine:snapshot]       = pre-cozy-engine (download/snapshots/pre-cozy-engine.zip, 39 KB)
+[cozy_engine:backup]         = download/cozy_engine_backup.zip
+[cozy_engine:data_size]      = 2.1 MB total (was 107 MB, 98% savings)
+[cozy_engine:scenes]         = 31967 (from 132358, max 20-per-scan, prefer cozy, 21% cozy)
+[cozy_engine:auc]            = AUC 0.90 on holdout (full corpus, before optimization)
+[cozy_engine:color_matrix_v] = prior-v11 (Color Matrix version used for color_* features)

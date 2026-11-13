@@ -1,0 +1,24 @@
+# MILESTONE: demo_intro v43 — WORKING
+
+Дата: 2026-10-30
+Статус: подтверждено пользователем — интро собирается MSVC x64 и РАБОТАЕТ
+на Windows 11 / NVIDIA GeForce GTX 750 (driver 560.94, OpenGL 3.3 core).
+
+Эта папка — замороженный снимок исходников рабочей версии.
+Эталонный zip: demo_intro_v43_WORKING.zip
+MD5: c0cbce51ba1b11f90cbfc474c0b2d70a
+Размер: 70870 байт
+Файлов в исходнике: 8 (main.cpp, shaders.h, opengl_loader.h, preview.html,
+README.md, roadmap.md, build_msvc.bat, build_mingw.bat)
+
+Корневые фиксы (доказаны):
+- v42: вариадик-указатель type (*)(...) заменён точными APIENTRY-прототипами
+  (26 функций). Лечит чёрный экран (float→double promotion в вариадике,
+  доказано дизассемблером) И крах 0xC0000005 в nvoglv32.dll (cdecl/stdcall
+  мисматч на x86).
+- v43: raw-литералы шейдеров разбиты на куски ≤8 КБ (лимит строкового токена
+  x64 cl = 16,384 байт; склейка проверена байт-в-байт). + _CRT_SECURE_NO_WARNINGS.
+
+Сборка: build_msvc.bat из "x64 Native Tools Command Prompt for VS 2022".
+mingw выкинут из workflow (user instruction); build_mingw.bat оставлен
+как опциональный/исторический.

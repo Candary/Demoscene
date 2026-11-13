@@ -1,0 +1,5 @@
+golden {'H1': 20, 'H2': 43, 'tables': 27, 'images': 4, 'drawings': 4, 'size_kb': 336.2}
+new    {'H1': 19, 'H2': 43, 'tables': 27, 'images': 4, 'drawings': 4, 'size_kb': 302.2}
+строк в теле: golden 537 new 537
+сходство строк: 1.0000
+расхождений-блоков: 0

@@ -1,0 +1,26 @@
+=== BUILD START 30.10.2026 16:23:42,30 === 
+Target architecture: x64 
+(empty = run from "x64 Native Tools Command Prompt for VS 2022") 
+ 
+main.cpp
+
+=== RUN START 2026-10-30 16:24:02.230 ===
+[Start] Demo Intro v45 trace.log | compiler=MSVC | arch=64-bit | build=Oct 30 2026 16:23:42
+[OK] Primary screen: 1920x1080
+[OK] Window created: 1920x1080 borderless, hwnd=00000000000D0C7E
+[GL] Pixel format 9: color=32 depth=24 stencil=8
+[OK] Created OpenGL 3.3 core context
+[GL] VERSION:    3.3.0 NVIDIA 560.94
+[GL] RENDERER:   NVIDIA GeForce GTX 750/PCIe/SSE2
+[GL] VENDOR:     NVIDIA Corporation
+[GL] GLSL:       3.30 NVIDIA via Cg compiler
+[OK] OpenGL context ready (hglrc=0000000000010001)
+[OK] Main shader program created (id=3)
+[OK] Default VAO created (id=1)
+[OK] Fire shader program created (id=6)
+[Fire] VBO built: 180 verts 30 particles
+[OK] GL resources initialized (VAO=1 fireVAO=2 fireVBO=1)
+[OK] Window shown — entering main loop
+[OK] First frame rendered 1920x1080
+[Exit] ESC pressed
+[Exit] Main loop ended (code 0)

@@ -1,0 +1,11 @@
+    prefix=/usr
+    exec_prefix=/usr
+    libdir=${exec_prefix}/lib/x86_64-linux-gnu
+    includedir=${prefix}/include
+    
+    Name: glslang
+    Description: OpenGL and OpenGL ES shader front end and validator
+    Requires:
+    Version: 
+    Libs: -L${libdir} -lglslang -lMachineIndependent -lGenericCodeGen -lOSDependent -lSPVRemapper -lpthread
+    Cflags: -I${includedir}
