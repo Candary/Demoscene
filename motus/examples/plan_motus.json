@@ -1,0 +1,20 @@
+{
+  "format": "uroboros.patch/2",
+  "name": "motus_room",
+  "nodes": [
+    {"id": "geometry", "target": "scene", "operation": "geometry.generate",
+     "params": {"width": 5.0, "depth": 4.0, "height": 2.7}},
+    {"id": "palette", "target": "color", "operation": "color.palette",
+     "params": {"mood": "quiet_warm", "scheme": "analogous", "size": 5}},
+    {"id": "compose", "target": "scene", "operation": "scene.compose",
+     "needs": ["geometry", "palette"], "params": {"lighting": "soft_indirect"}},
+    {"id": "motion", "target": "scene", "operation": "motus.scene",
+     "needs": ["compose"],
+     "params": {
+       "mode": "auto",
+       "bpm": 120.0,
+       "times": [0.0, 0.5, 1.0, 1.5, 2.0, 2.5],
+       "query": "mode dsl\nnew ball pos=(0,0,0) param.color=(1.0,0.6,0.2)\nnew halo parent=ball pos=(0,0.6,0)\nanim ball.position from=(0,0,0) to=(3,0,0) over=2 ease=smooth\nproc ball.rotation spin rate=180\nproc halo.scale.uniform pulse base=1.0 amp=0.2 freq=2 mode=mul\nfx burst on=ball at=2 for=1.5 count=600 seed=7 speed=7\nfx vignette at=0 amount=0.4\n"
+     }}
+  ]
+}

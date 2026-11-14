@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "motus"
+version = "0.1.0"
+description = "Deterministic motion-core controlled by text queries (DSL + free language)"
+readme = "docs/README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = []
+
+[project.optional-dependencies]
+particles = ["numpy>=1.20"]
+test = ["pytest>=7"]
+
+[project.scripts]
+motus = "motus.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["motus*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
