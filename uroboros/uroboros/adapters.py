@@ -163,3 +163,118 @@ def plan_room_via_cozy(room: str, count: int) -> dict:
     if res.get("error"):
         return {"ok": False, "error": res["error"], "room": room}
     return {"ok": True, **res}
+
+# --- Motus adapter ---------------------------------------------------------
+
+_MOTUS_CACHE: dict[str, object] = {}
+
+
+def motus_available() -> bool:
+    """Проверяет, импортируется ли пакет motus. Не падает при отсутствии."""
+    if "motus_avail" not in _MOTUS_CACHE:
+        try:
+            import motus  # noqa: F401
+            _MOTUS_CACHE["motus_avail"] = True
+        except ImportError:
+            _MOTUS_CACHE["motus_avail"] = False
+    return bool(_MOTUS_CACHE["motus_avail"])
+
+
+def _json_safe(value):
+    """Приводит tuple/numpy-скаляры к JSON-совместимому виду."""
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, dict):
+        return {str(k): _json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(v) for v in value]
+    try:
+        import numpy as np  # type: ignore
+        if isinstance(value, np.generic):
+            return value.item()
+        if isinstance(value, np.ndarray):
+            return value.tolist()
+    except ImportError:
+        pass
+    return repr(value)
+
+
+def motus_scene(query: str, times: list, *, particles: bool = False,
+                bpm: float = 120.0, mode: str = "auto") -> dict:
+    """Выполняет motus-запрос и возвращает JSON-снимки кадров.
+
+    Контракт:
+      ok=True  -> {"ok": True, "source": "motus", "mode": ..., "frames": [...]}
+      ok=False -> {"ok": False, "source": "fallback", "error": "..."}
+    """
+    if not motus_available():
+        return {
+            "ok": False,
+            "source": "fallback",
+            "error": "motus is not installed; pip install -e path/to/motus",
+        }
+    try:
+        from motus import Runtime, Transport
+    except ImportError as exc:
+        return {"ok": False, "source": "fallback",
+                "error": f"motus import failed: {exc}"}
+
+    try:
+        rt = Runtime(Transport(bpm=float(bpm)), mode=str(mode), particles=bool(particles))
+    except Exception as exc:
+        return {"ok": False, "source": "fallback",
+                "error": f"Runtime init failed: {type(exc).__name__}: {exc}"}
+
+    try:
+        report = rt.submit(str(query))
+    except Exception as exc:
+        return {"ok": False, "source": "motus",
+                "error": f"submit failed: {type(exc).__name__}: {exc}"}
+
+    if not report.ok:
+        return {
+            "ok": False,
+            "source": "motus",
+            "error": str(report),
+            "issues": [str(i) for i in report.issues],
+        }
+
+    frames = []
+    for t in times:
+        try:
+            plan = rt.frame(float(t))
+        except Exception as exc:
+            return {"ok": False, "source": "motus",
+                    "error": f"frame({t}) failed: {type(exc).__name__}: {exc}"}
+        frames.append({
+            "time": plan.time,
+            "items": [
+                {
+                    "entity": it.entity,
+                    "name": it.name,
+                    "world": list(it.world),
+                    "params": _json_safe(it.params),
+                }
+                for it in plan.items
+            ],
+            "batches": [
+                {
+                    "emitter": b.emitter,
+                    "effect": b.effect,
+                    "count": b.count,
+                    "origin": list(b.origin),
+                }
+                for b in plan.batches
+            ],
+            "posts": [
+                {"effect": p.effect, "params": _json_safe(p.params)}
+                for p in plan.posts
+            ],
+            "stats": _json_safe(plan.stats),
+        })
+    return {
+        "ok": True,
+        "source": "motus",
+        "mode": report.mode,
+        "frames": frames,
+    }
