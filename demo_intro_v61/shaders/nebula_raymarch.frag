@@ -50,6 +50,23 @@ uniform float uPulse;          // 0..1 — beat pulse
 // --- Выход ------------------------------------------------------------------
 out vec4 FragColor;
 
+// --- v61: color-matrix-safe helpers -------------------------------------------
+// Контракт: uPrimaryColor / uAccentColor — это ЦВЕТ НАСТРОЕНИЯ (hue), а не яркость.
+// Шейдеры с volumetric accumulation умножают цвет на density и alpha (0.05..0.3),
+// поэтому яркий mood-цвет всё равно тонет в фоне. Нормализуем хрому к эталонной
+// яркости => любой цвет из Color Matrix даёт одинаковую видимую плотность.
+const float REF_LUMA      = 0.35;   // целевая яркость «светящегося» цвета
+const float COVERAGE_GAIN = 4.0;    // refmap alpha: 0.08 -> ~0.38 видимой плотности
+const float EXPOSURE      = 0.75;    // общая яркость облака
+
+float luma(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
+
+// Приводит цвет к единичной яркости и масштабирует до REF_LUMA (hue сохраняется).
+vec3 colorize(vec3 c) {
+    c = clamp(c, 0.0, 1.0);
+    return c * (REF_LUMA / max(luma(c), 1e-3));
+}
+
 // ============================================================================
 // Константы
 // ============================================================================
@@ -62,25 +79,31 @@ uniform int uVolumeSteps;             // adaptive: 40 default, 24 low quality (s
 const int   MAX_VOLUME_STEPS = 40;    // GLSL 330: max bound for loop
 const float VOLUME_NEAR  = 1.0;       // начать raymarch с t=1
 const float VOLUME_FAR   = 20.0;      // заканчиваем на t=20
-// v61: DENSITY_SCALE raised 0.6 → 1.0 (mist was invisible; v60 baseline colors
-// gave effective_L ≈ 0.04 which is too dark even at max input L=1.0).
-// With DENSITY_SCALE=1.0 + sampleAlpha 0.5 + uIntensity 1.5 (set in scene_bake),
-// effective brightness for primary becomes ~0.65 instead of ~0.15 — visible.
-const float DENSITY_SCALE = 1.0;      // v61: было 0.6, поднято для видимости
+const float DENSITY_SCALE = 0.6;      // масштаб плотности (visual)
 
 // ============================================================================
 // Hash и noise
 // ============================================================================
 
+// v61: целочисленный hash. Старая версия складывала seed с координатой ДО
+// умножения на 17: при seed >= 2e4 произведение ~1e8, float32 теряет дробную часть,
+// fract(...) == 0 — шум умирал (nebula квантовалась шагом 1/16, anxiety была плоской).
 float hash3(vec3 p) {
-    // uSeed подмешивается для per-show вариации.
-    p = fract(p * 0.3183099 + 0.1) + float(uSeed) * 0.0001;
-    p *= 17.0;
-    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+    // v61.1: целочисленный hash — без квантования (fract-версия давала ~64 уровня
+    // и на пороге smoothstep превращалась в прямоугольные ступеньки).
+    ivec3 i = ivec3(floor(p));
+    uint h = uint(i.x) * 0x8da6b343u ^ uint(i.y) * 0xd8163841u
+           ^ uint(i.z) * 0xcb1ab31fu ^ uint(uSeed);
+    h ^= h >> 13; h *= 0x5bd1e995u; h ^= h >> 15;
+    return float(h & 0xFFFFFFu) / 16777216.0;
 }
 
+
 // Value noise 3D — trilinear.
-float noise3(vec3 p) {
+// v61.2 fix: renamed noise3 -> vnoise3 to avoid clash with GLSL reserved built-in
+// (GLSL 330 spec lists `noise3` as legacy built-in; strict compilers reject
+// user-defined overloads with "overloaded functions must have the same return type").
+float vnoise3(vec3 p) {
     vec3 i = floor(p);
     vec3 f = fract(p);
     f = f * f * (3.0 - 2.0 * f);
@@ -96,14 +119,23 @@ float noise3(vec3 p) {
                mix(mix(ne, nf, f.x), mix(ng, nh, f.x), f.y), f.z);
 }
 
+// 2-октавный FBM — для domain warp (дешевле полного 4-октавного).
+float fbm2(vec3 p) {
+    float v = 0.0;
+    float a = 0.5;
+    v += a * vnoise3(p);          p = p * 2.0 + vec3(1.7, 2.3, 3.1); a *= 0.5;
+    v += a * vnoise3(p);
+    return v;
+}
+
 // 4-octave FBM.
 float fbm(vec3 p) {
     float v = 0.0;
     float a = 0.5;
-    v += a * noise3(p);          p = p * 2.0 + vec3(1.7, 2.3, 3.1); a *= 0.5;
-    v += a * noise3(p);          p = p * 2.0 + vec3(1.7, 2.3, 3.1); a *= 0.5;
-    v += a * noise3(p);          p = p * 2.0 + vec3(1.7, 2.3, 3.1); a *= 0.5;
-    v += a * noise3(p);
+    v += a * vnoise3(p);          p = p * 2.0 + vec3(1.7, 2.3, 3.1); a *= 0.5;
+    v += a * vnoise3(p);          p = p * 2.0 + vec3(1.7, 2.3, 3.1); a *= 0.5;
+    v += a * vnoise3(p);          p = p * 2.0 + vec3(1.7, 2.3, 3.1); a *= 0.5;
+    v += a * vnoise3(p);
     return v;
 }
 
@@ -124,7 +156,7 @@ float densityField(vec3 p) {
 
     // Threshold: только плотные области дают visible mist.
     // smoothstep даёт мягкий край.
-    return smoothstep(0.4, 0.75, mist);
+    return smoothstep(0.42, 0.68, mist);   // v61: контрастнее облака
 }
 
 // ============================================================================
@@ -151,16 +183,14 @@ vec4 volumetricMarch(vec3 ro, vec3 rd) {
         if (density > 0.001) {
             // Цвет: mix primary и accent в зависимости от density.
             float colorMix = smoothstep(0.2, 0.8, density);
-            mediump vec3 localColor = mix(uPrimaryColor, uAccentColor, colorMix);
+            mediump vec3 localColor = mix(colorize(uPrimaryColor), colorize(uAccentColor), colorMix);
 
             // Brightness modulation: distance fade + uIntensity + uPulse.
             float distFade = 1.0 / (1.0 + t * 0.1);
             float brightness = uIntensity * distFade * (1.0 + uPulse * 0.5);
 
             // Front-to-back accumulation.
-            // v61: sampleAlpha multiplier raised 0.3 → 0.5 (mist был невидим; с
-            // DENSITY_SCALE=1.0 и этим множителем effective accumulation ~3x выше).
-            mediump float sampleAlpha = density * baseStepSize * 0.5;
+            mediump float sampleAlpha = density * baseStepSize * 0.3;
             mediump vec3 sampleColor = localColor * brightness;
 
             totalColor += (1.0 - totalAlpha) * sampleColor * sampleAlpha;
@@ -200,11 +230,18 @@ vec3 aces(vec3 c) {
 // Main
 // ============================================================================
 void main() {
+
+    // --- Pipeline defaults: guard against unset uniforms (0 in GLSL) ---
+    vec3  primaryColor = max(uPrimaryColor, vec3(0.001));
+    float intensity    = max(uIntensity, 1.0);
+    float motionSpeed  = max(uMotionSpeed, 0.0);
+    float pulse        = max(uPulse, 0.0);
+
     vec2 fragUv = gl_FragCoord.xy / uResolution;
     vec2 uv = (fragUv * 2.0 - 1.0) * vec2(uResolution.x / uResolution.y, 1.0);
 
     // Камера: статичная (или лёгкое вращение), смотрит вдоль +Z.
-    float cam_t = uTime * 0.05 * uMotionSpeed;
+    float cam_t = uTime * 0.05 * motionSpeed;
     vec3 ro = vec3(sin(cam_t) * 1.5, 0.0, -6.0);
     vec3 ta = vec3(0.0, 0.0, 0.0);
     vec3 fwd = normalize(ta - ro);
@@ -217,10 +254,14 @@ void main() {
 
     // Background (виден там, где volumetric alpha < 1).
     vec3 bg = backgroundColor(rd);
-    vec3 col = mix(bg, vol.rgb, vol.a);
+    // v61: un-premultiply + coverage remap.
+    // Без этого alpha ~0.08 гасит любой цвет: mix(bg, vol.rgb, 0.08) ≈ bg.
+    vec3 avgLight = vol.rgb / max(vol.a, 1e-4);            // средний цвет облака вдоль луча
+    float cover   = 1.0 - exp(-vol.a * COVERAGE_GAIN);     // видимая плотность 0..1
+    vec3 col = mix(bg, avgLight * EXPOSURE, cover);
 
     // Pulse brightness boost.
-    col += uAccentColor * uPulse * 0.2;
+    col += uAccentColor * pulse * 0.2;
 
     // Vignette.
     vec2 vd = fragUv - 0.5;

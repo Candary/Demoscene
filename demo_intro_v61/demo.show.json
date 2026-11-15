@@ -1,7 +1,7 @@
 {
   "format": "scene-manager/1",
   "meta": {
-    "title": "v61 — Volumetric Color Adapter + Per-Scene Palettes",
+    "title": "v59-v2: v58 with Color Matrix + Cozy Engine",
     "duration": 211,
     "resolution": [
       1280,
@@ -15,79 +15,7 @@
     "bpm": 128.0,
     "offset": 0.0,
     "beats_per_bar": 4,
-    "markers": [],
-    "energy": [
-      0.05,
-      0.1,
-      0.2,
-      0.3,
-      0.4,
-      0.5,
-      0.55,
-      0.6,
-      0.7,
-      0.78,
-      0.82,
-      0.85,
-      0.88,
-      0.92,
-      0.98,
-      1.0,
-      1.0,
-      0.98,
-      0.92,
-      0.85,
-      0.9,
-      0.95,
-      0.92,
-      0.88,
-      0.85,
-      0.92,
-      1.0,
-      1.0,
-      0.98,
-      0.92,
-      0.85,
-      0.78,
-      0.7,
-      0.62,
-      0.55,
-      0.48,
-      0.4,
-      0.33,
-      0.27,
-      0.22,
-      0.18,
-      0.15,
-      0.12,
-      0.1,
-      0.08,
-      0.2,
-      0.3,
-      0.4,
-      0.5,
-      0.55,
-      0.5,
-      0.45,
-      0.4
-    ],
-    "sections": [
-      {
-        "start": 0.0
-      },
-      {
-        "start": 27.0
-      },
-      {
-        "start": 77.0
-      },
-      {
-        "start": 127.0
-      },
-      {
-        "start": 181.0
-      }
-    ]
+    "markers": []
   },
   "palettes": {
     "p": {
@@ -119,19 +47,18 @@
       "start": 0,
       "duration": 25,
       "palette": "p",
-      "seed": 11111,
       "map": {
         "uPrimaryColor": [
-          0.050980392156862744,
-          0.12156862745098039,
-          0.30196078431372547
+          0.9882352941176471,
+          0.23529411764705882,
+          0.2196078431372549
         ],
         "uAccentColor": [
-          0.2,
-          0.6,
-          0.8
+          0.8784313725490196,
+          0.03137254901960784,
+          0.047058823529411764
         ],
-        "uIntensity": 1.5,
+        "uIntensity": 0.8,
         "uMotionSpeed": 1.0,
         "uPulse": 0.0
       }
@@ -144,12 +71,11 @@
       "start": 25,
       "duration": 25,
       "palette": "p",
-      "seed": 22222,
       "map": {
         "uColor": [
-          0.10196078431372549,
-          0.4,
-          0.8
+          0.6901960784313725,
+          0.596078431372549,
+          0.5019607843137255
         ],
         "uGlow": 1.2,
         "uOrbit": 0.0
@@ -163,12 +89,11 @@
       "start": 50,
       "duration": 25,
       "palette": "p",
-      "seed": 33333,
       "map": {
         "uColor": [
-          0.9490196078431372,
-          0.2,
-          0.5333333333333333
+          0.8470588235294118,
+          0.9882352941176471,
+          0.40784313725490196
         ],
         "uSwarm": 0.7,
         "uBeatKick": 0.0
@@ -182,19 +107,18 @@
       "start": 75,
       "duration": 25,
       "palette": "p",
-      "seed": 44444,
       "map": {
         "uPrimaryColor": [
-          0.25098039215686274,
-          0.050980392156862744,
-          0.10196078431372549
+          0.9882352941176471,
+          0.23529411764705882,
+          0.2196078431372549
         ],
         "uAccentColor": [
-          0.8,
-          0.1411764705882353,
-          0.09411764705882353
+          0.8784313725490196,
+          0.03137254901960784,
+          0.047058823529411764
         ],
-        "uIntensity": 1.8,
+        "uIntensity": 1.2,
         "uMotionSpeed": 1.5,
         "uWarmth": 0.85
       }
@@ -207,12 +131,11 @@
       "start": 100,
       "duration": 25,
       "palette": "p",
-      "seed": 55555,
       "map": {
         "uColor": [
-          0.30196078431372547,
-          0.6,
-          0.8
+          0.6901960784313725,
+          0.596078431372549,
+          0.5019607843137255
         ],
         "uMorph": 0.5,
         "uSpeed": 1.0
@@ -226,12 +149,11 @@
       "start": 125,
       "duration": 55,
       "palette": "p",
-      "seed": 66666,
       "map": {
         "uLightColor": [
-          1.0,
-          0.8392156862745098,
-          0.6
+          0.6901960784313725,
+          0.596078431372549,
+          0.5019607843137255
         ],
         "uCamAngle": 0.15
       },
@@ -368,7 +290,6 @@
       "start": 181,
       "duration": 30,
       "palette": "p",
-      "seed": 77777,
       "map": {}
     },
     {
@@ -383,7 +304,6 @@
         "s2"
       ],
       "palette": "p",
-      "seed": 10101,
       "map": {}
     },
     {
@@ -398,7 +318,6 @@
         "s3"
       ],
       "palette": "p",
-      "seed": 20202,
       "map": {
         "uColor": [
           1.0,
@@ -420,7 +339,6 @@
         "s4"
       ],
       "palette": "p",
-      "seed": 30303,
       "map": {}
     },
     {
@@ -435,7 +353,6 @@
         "s5"
       ],
       "palette": "p",
-      "seed": 40404,
       "map": {
         "uColor": [
           1.0,
@@ -457,7 +374,6 @@
         "s6"
       ],
       "palette": "p",
-      "seed": 50505,
       "map": {}
     },
     {
@@ -472,65 +388,21 @@
         "s7"
       ],
       "palette": "p",
-      "seed": 60606,
       "map": {}
     },
     {
-      "id": "blm_bright",
+      "id": "blm",
       "track": "post",
       "kind": "post",
-      "effect": "bloom_bright",
+      "effect": "bloom",
       "start": 0,
       "duration": 211,
       "palette": "p",
-      "seed": 77007,
       "map": {
         "uThreshold": 0.6,
-        "uIntensity": 1.0
+        "uIntensity": 1.0,
+        "uRadius": 4.0
       }
-    },
-    {
-      "id": "blm_blurh",
-      "track": "post",
-      "kind": "post",
-      "effect": "bloom_blur",
-      "start": 0,
-      "duration": 211,
-      "palette": "p",
-      "seed": 77008,
-      "map": {
-        "uDirection": [
-          1.0,
-          0.0
-        ]
-      }
-    },
-    {
-      "id": "blm_blurv",
-      "track": "post",
-      "kind": "post",
-      "effect": "bloom_blur",
-      "start": 0,
-      "duration": 211,
-      "palette": "p",
-      "seed": 77009,
-      "map": {
-        "uDirection": [
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "id": "blm_add",
-      "track": "post",
-      "kind": "post",
-      "effect": "passthrough",
-      "start": 0,
-      "duration": 211,
-      "palette": "p",
-      "seed": 77010,
-      "map": {}
     },
     {
       "id": "vig",
@@ -540,7 +412,6 @@
       "start": 0,
       "duration": 211,
       "palette": "p",
-      "seed": 99001,
       "map": {
         "uStrength": 0.35,
         "uSoftness": 0.5
@@ -554,7 +425,6 @@
       "start": 0,
       "duration": 211,
       "palette": "p",
-      "seed": 88008,
       "map": {
         "uAmount": 0.2
       }
@@ -567,7 +437,6 @@
       "start": 211,
       "duration": 0,
       "palette": "p",
-      "seed": 77777,
       "map": {}
     }
   ]

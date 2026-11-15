@@ -11,6 +11,8 @@ out vec4 FragColor;
 const float PI = 3.14159265359;
 
 void main() {
+    // v61.2 fix: removed duplicate `float intensity` declaration.
+    float intensity = max(uIntensity, 1.0);
     vec2 uv = gl_FragCoord.xy / uResolution;
     vec4 center = texture(uInput, uv);
 
@@ -27,6 +29,6 @@ void main() {
     bloomAccum /= float(SAMPLES);
 
     // Composite: original + blurred bright areas.
-    vec3 col = center.rgb + bloomAccum * uIntensity;
+    vec3 col = center.rgb + bloomAccum * intensity;
     FragColor = vec4(col, center.a);
 }

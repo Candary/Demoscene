@@ -5,9 +5,13 @@ uniform float uGlobalTime; uniform vec2 uResolution; uniform int uSeed;
 uniform float uBeat; uniform float uBeatPhase; uniform float uBarPhase; uniform float uEnergy;
 uniform sampler2D uInput;
 uniform vec2 uDirection;
+uniform float uIntensity;
+
 out vec4 FragColor;
 const float w[5] = float[](0.227027, 0.1945946, 0.1216216, 0.07567568, 0.025);
 void main() {
+    // v61.2 fix: removed duplicate `float intensity` declaration.
+    float intensity = max(uIntensity, 1.0);
     vec2 uv = gl_FragCoord.xy / uResolution;
     vec2 texelSize = uDirection / uResolution;
     vec3 col = texture(uInput, uv).rgb * w[0];

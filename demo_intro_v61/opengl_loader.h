@@ -101,6 +101,15 @@ DECL_GL_FN(void,    glUniform4f,     (GLint location, GLfloat v0,
                                       GLfloat v1, GLfloat v2, GLfloat v3));
 // --- glActiveTexture (OpenGL 1.3, not in Windows gl.h 1.1) ---
 DECL_GL_FN(void,    glActiveTexture, (GLenum texture));
+// --- P1.3: OpenGL 1.4 blend functions (needed for opacity application) ---
+// glBlendColor sets the GL_CONSTANT_COLOR / GL_CONSTANT_ALPHA values used
+// by glBlendFuncSeparate when blending factors reference GL_CONSTANT_*.
+// glBlendFuncSeparate allows separate RGB and alpha blend factors, which
+// we use to multiply source alpha by clip opacity.
+DECL_GL_FN(void,    glBlendColor,      (GLfloat red, GLfloat green,
+                                        GLfloat blue, GLfloat alpha));
+DECL_GL_FN(void,    glBlendFuncSeparate, (GLenum sfactorRGB, GLenum dfactorRGB,
+                                          GLenum sfactorAlpha, GLenum dfactorAlpha));
 
 // v41 diag: имя последней функции, которую не удалось загрузить.
 static const char* g_lastMissingGLFn = "(none)";
@@ -156,6 +165,11 @@ static bool LoadOpenGLFunctions() {
     LOAD_GL_FN(glDeleteFramebuffers);
     LOAD_GL_FN(glUniform4f);
     LOAD_GL_FN(glActiveTexture);
+    // P1.3: OpenGL 1.4 blend functions (needed for opacity application).
+    // These are NOT in Windows gl.h 1.1 — must be loaded via wglGetProcAddress.
+    // Required for setBlendMode() to apply clip opacity animations.
+    LOAD_GL_FN(glBlendColor);
+    LOAD_GL_FN(glBlendFuncSeparate);
 
     #undef LOAD_GL_FN
     return true;
@@ -211,4 +225,18 @@ static bool LoadOpenGLFunctions() {
 #endif
 #ifndef GL_DST_COLOR
 #define GL_DST_COLOR                0x0306
+#endif
+// --- P1.3: OpenGL 1.4 blend color constants (EXT_blend_color / core 1.4) ---
+// Used by glBlendColor + glBlendFuncSeparate to apply clip opacity.
+#ifndef GL_CONSTANT_COLOR
+#define GL_CONSTANT_COLOR           0x8001
+#endif
+#ifndef GL_ONE_MINUS_CONSTANT_COLOR
+#define GL_ONE_MINUS_CONSTANT_COLOR 0x8002
+#endif
+#ifndef GL_CONSTANT_ALPHA
+#define GL_CONSTANT_ALPHA           0x8003
+#endif
+#ifndef GL_ONE_MINUS_CONSTANT_ALPHA
+#define GL_ONE_MINUS_CONSTANT_ALPHA 0x8004
 #endif

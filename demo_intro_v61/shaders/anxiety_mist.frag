@@ -45,10 +45,22 @@ uniform vec3  uPrimaryColor;   // palette.primary
 uniform vec3  uAccentColor;    // palette.accent
 uniform float uIntensity;      // 0..2
 uniform float uMotionSpeed;    // 0..3
-uniform float uWarmth;         // 0..1
+uniform float uWarmth;
+uniform float uPulse;         // 0..1
 
 // --- Выход ------------------------------------------------------------------
 out vec4 FragColor;
+
+// --- v61: color-matrix-safe helpers -------------------------------------------
+// См. nebula_raymarch.frag: цвет из Color Matrix — это hue, а не яркость.
+const float REF_LUMA = 0.35;
+
+float luma(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
+
+vec3 colorize(vec3 c) {
+    c = clamp(c, 0.0, 1.0);
+    return c * (REF_LUMA / max(luma(c), 1e-3));
+}
 
 // ============================================================================
 // Константы
@@ -62,15 +74,20 @@ const float TAU = 6.28318530718;
 // ============================================================================
 
 // 3D hash — для FBM в uv-time пространстве.
+// v61: целочисленный hash (раньше seed 44444 полностью убивал шум: fract(prod)==0).
 float hash3(vec3 p) {
-    // uSeed подмешивается для per-show вариации.
-    p = fract(p * 0.3183099 + 0.1) + float(uSeed) * 0.0001;
-    p *= 17.0;
-    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+    // v61.1: целочисленный hash — без квантования (fract-версия давала ~64 уровня
+    // и на пороге smoothstep превращалась в прямоугольные ступеньки).
+    ivec3 i = ivec3(floor(p));
+    uint h = uint(i.x) * 0x8da6b343u ^ uint(i.y) * 0xd8163841u
+           ^ uint(i.z) * 0xcb1ab31fu ^ uint(uSeed);
+    h ^= h >> 13; h *= 0x5bd1e995u; h ^= h >> 15;
+    return float(h & 0xFFFFFFu) / 16777216.0;
 }
 
 // Value noise 3D — trilinear interpolation.
-float noise3(vec3 p) {
+// v61.2 fix: renamed noise3 -> vnoise3 (GLSL reserved built-in name clash).
+float vnoise3(vec3 p) {
     vec3 i = floor(p);
     vec3 f = fract(p);
     f = f * f * (3.0 - 2.0 * f);
@@ -91,7 +108,7 @@ float fbm(vec3 p) {
     float v = 0.0;
     float a = 0.5;
     for (int i = 0; i < 4; i++) {
-        v += a * noise3(p);
+        v += a * vnoise3(p);
         p = p * 2.0 + vec3(1.7, 2.3, 3.1);
         a *= 0.5;
     }
@@ -121,10 +138,10 @@ float panicFlash() {
     float phase = mod(t, period) / period;  // 0..1 внутри цикла
     // Без early return — для совместимости со старыми ANGLE/D3D11.
     // 'active' — reserved word в GLSL, используем 'flashMask'.
-    float flashMask = step(phase, 0.7);       // 1.0 если phase <= 0.7, иначе 0.0
-    float localPhase = phase / 0.7;           // 0..1 внутри вспышки
+    float flashMask = step(phase, 0.12);      // v61: было 0.7 — вспышка горела 70% цикла
+    float localPhase = phase / 0.12;          // 0..1 внутри вспышки (≈0.55 с из 4.6 с)
     // Острый пик + быстрый спад.
-    return pow(1.0 - localPhase, 3.0) * 0.8 * flashMask;
+    return pow(1.0 - localPhase, 2.0) * 0.9 * flashMask;
 }
 
 // Сумма вспышек, ограниченная 0..1.5.
@@ -136,6 +153,13 @@ float totalFlash() {
 // Main — точка входа
 // ============================================================================
 void main() {
+
+    // --- Pipeline defaults: guard against unset uniforms (0 in GLSL) ---
+    vec3  primaryColor = max(uPrimaryColor, vec3(0.001));
+    float intensity    = max(uIntensity, 1.0);
+    float motionSpeed  = max(uMotionSpeed, 0.0);
+    float pulse        = max(uPulse, 0.0);
+
     // UV в screen-space, нормализованный.
     vec2 fragUv = gl_FragCoord.xy / uResolution;
     vec2 uv = fragUv * 2.0 - 1.0;
@@ -143,7 +167,7 @@ void main() {
 
     // --- Туман: domain-warped FBM --------------------------------------------
     // p — 3D: 2D screen coords + time axis (для анимации).
-    float t = uTime * uMotionSpeed * 0.3;
+    float t = uTime * motionSpeed * 0.3;
     vec3 p = vec3(uv * 1.5, t);
 
     // Domain warp: FBM от FBM-ом.
@@ -161,20 +185,21 @@ void main() {
         uPrimaryColor * vec3(1.3, 0.5, 0.3),  // warm red shift
         uWarmth
     );
+    // v61: нормализуем яркость после канального сдвига — иначе тёмный primary
+    // (0.25, 0.05, 0.1) ужимается теплым сдвигом до (0.30, 0.024, 0.036).
+    primaryMod = colorize(primaryMod);
 
     // Туманная компонента: primaryMod, усиливается где mist > порог.
-    // v61: multiplier raised 0.4 → 0.8 (primary был невидим; eff_L было 0.05,
-    // поднимаем до ~0.10 — заметный туман вместо почти-чёрного).
     vec3 col = darkBase;
-    col = mix(col, primaryMod * 0.8, smoothstep(0.3, 0.7, mist));
+    col = mix(col, primaryMod * 0.22, smoothstep(0.3, 0.7, mist));
 
     // --- Красные вспышки: uAccentColor усиливается вспышкой ------------------
     float flash = totalFlash();
     // Base flash: всегда видимый (не зависит от mist), слабее.
-    col += uAccentColor * flash * uIntensity * 0.6;
+    col += colorize(uAccentColor) * flash * intensity * 0.6;
     // Mist-masked flash: сильнее, только в плотных областях тумана.
     float flashMask = smoothstep(0.2, 0.5, mist);
-    col += uAccentColor * flash * flashMask * uIntensity * 1.0;  // вспышка — additive, ярче фона
+    col += colorize(uAccentColor) * flash * flashMask * intensity * 1.0;  // вспышка — additive, ярче фона
 
     // --- Дополнительная тёмная виньетка по краям ----------------------------
     // Anxiety часто использует "tunnel vision" — края затемнены.
@@ -185,7 +210,7 @@ void main() {
     // --- Дрожание камеры — лёгкое, чувствуётся不安 ---------------------------
     // Очень subtle shake: 1-2 пикселя дрожания.
     // (через uniform uv offset, не position — иначе артефакты)
-    float shake = (noise3(vec3(t * 8.0, 0.0, 0.0)) - 0.5) * 0.005 * uIntensity;
+    float shake = (vnoise3(vec3(t * 8.0, 0.0, 0.0)) - 0.5) * 0.005 * intensity;
     col *= 1.0 + shake * 2.0;
 
     // --- ACES tonemap + gamma 2.2 --------------------------------------------

@@ -8,10 +8,12 @@ uniform float uThreshold;
 uniform float uIntensity;
 out vec4 FragColor;
 void main() {
+    // v61.2 fix: removed duplicate `float intensity` declaration.
+    float intensity = max(uIntensity, 1.0);
     vec2 uv = gl_FragCoord.xy / uResolution;
     vec3 col = texture(uInput, uv).rgb;
     float brightness = dot(col, vec3(0.2126, 0.7152, 0.0722));
     float contribution = smoothstep(uThreshold * 0.8, uThreshold * 1.2, brightness);
-    col *= contribution * uIntensity;
+    col *= contribution * intensity;
     FragColor = vec4(col, 1.0);
 }

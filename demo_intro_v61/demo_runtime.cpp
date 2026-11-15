@@ -20,7 +20,6 @@
 #include "gl_executor.hpp"
 
 static HWND g_hwnd = nullptr;
-static glx::ShaderCache* g_shaders = nullptr;  // v60: for hot-reload in WndProc
 static HDC g_hdc = nullptr;
 static HGLRC g_hglrc = nullptr;
 static bool g_running = true;
@@ -61,6 +60,8 @@ static SceneStat g_scenes[] = {
     {"cozy_room",     127.0, 180.0,  999, 0, 0, 0},
     {"transition_6",  180.0, 181.0,  999, 0, 0, 0},
     {"morphing_figures",181.0,211.0,  999, 0, 0, 0},
+    {"transition_7",  211.0, 213.0,  999, 0, 0, 0},
+    {"lava_cracks",   213.0, 223.0,  999, 0, 0, 0},
 };
 static const int g_numScenes = sizeof(g_scenes) / sizeof(g_scenes[0]);
 
@@ -137,7 +138,8 @@ static void captureFrame(const char* filename, int w, int h) {
 // T=102 (s4→s5), T=127 (s5→s6), T=181 (s6→s7).
 // Capture 2s after: T=29, 54, 79, 104, 129, 183.
 // Plus T=2 for initial scene.
-static double g_captureTimes[] = {2.0, 29.0, 54.0, 79.0, 104.0, 129.0, 183.0};
+// v61.2: added T=217 capture for new lava scene (s8 starts at 213).
+static double g_captureTimes[] = {2.0, 29.0, 54.0, 79.0, 104.0, 129.0, 183.0, 217.0};
 static const char* g_captureNames[] = {
     "shot_nebula.bmp",
     "shot_sphere.bmp",
@@ -146,6 +148,7 @@ static const char* g_captureNames[] = {
     "shot_morph_grid.bmp",
     "shot_cozy_room.bmp",
     "shot_morphing_figures.bmp",
+    "shot_lava.bmp",
 };
 static int g_captureIdx = 0;
 static bool g_manualCapture = false;
@@ -153,6 +156,19 @@ static bool g_manualCapture = false;
 // v60: Recording (F3 toggle) — saves every frame as PNG for ffmpeg.
 static bool g_recording = false;
 static int g_recordFrame = 0;
+
+// v61: Still mode — один кадр в PNG для быстрой визуальной проверки.
+// demo_runtime.exe demo.smt --still 2.0 --out still.png [--repeat 3]
+static double g_stillTime = -1.0;
+static std::string g_stillOut;
+static int g_stillRepeat = 1;
+
+// v61: PNG требует big-endian для длин чанков и CRC (баг v60: писали host-order).
+static void putBE32(FILE* f, unsigned int v) {
+    unsigned char b[4] = {(unsigned char)(v >> 24), (unsigned char)(v >> 16),
+                          (unsigned char)(v >> 8), (unsigned char)v};
+    fwrite(b, 1, 4, f);
+}
 
 // Minimal PNG writer (no external library, ~50 lines).
 static void writePNG(const char* filename, int w, int h, const unsigned char* rgba) {
@@ -172,9 +188,9 @@ static void writePNG(const char* filename, int w, int h, const unsigned char* rg
     // CRC and chunk writing
     auto writeChunk = [&](const char* type, const unsigned char* data, int len) {
         unsigned int clen = len;
-        fwrite(&clen, 4, 1, f);
+        putBE32(f, clen);
         fwrite(type, 1, 4, f);
-        fwrite(data, 1, len, f);
+        if (len > 0) fwrite(data, 1, len, f);
         // CRC32
         static unsigned int table[256];
         static bool init = false;
@@ -192,7 +208,7 @@ static void writePNG(const char* filename, int w, int h, const unsigned char* rg
             crc = table[(crc ^ b) & 0xFF] ^ (crc >> 8);
         }
         crc ^= 0xFFFFFFFF;
-        fwrite(&crc, 4, 1, f);
+        putBE32(f, crc);
     };
     writeChunk("IHDR", ihdr, 13);
     // IDAT: raw pixel data with filter byte per row
@@ -252,10 +268,6 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                                   if (g_recording) { Log("[Record] Started (frames → PNG)"); g_recordFrame = 0; }
                                   else Log("[Record] Stopped (%d frames)", g_recordFrame);
                                   return 0; } // v60: toggle recording
-            if (wp == VK_F4)    { int n = g_shaders ? g_shaders->checkReload() : 0;
-                                  if (n > 0) Log("[HotReload] %d shader(s) recompiled", n);
-                                  else Log("[HotReload] No changes detected");
-                                  return 0; } // v60: hot-reload shaders
             break;
         case WM_CLOSE: g_running = false; PostQuitMessage(0); return 0;
         case WM_SIZE: g_width = LOWORD(lp); g_height = HIWORD(lp); return 0;
@@ -326,9 +338,30 @@ static bool createGLContext(HWND hwnd) {
     return true;
 }
 
-int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR lpCmdLine, int) {
     std::string smtPath = "demo.smt";
     std::string shaderDir = "shaders";
+
+    // v61: разбор аргументов командной строки (путь к .smt + режим одиночного кадра).
+    {
+        std::string args = lpCmdLine ? lpCmdLine : "";
+        std::vector<std::string> argv;
+        size_t i = 0;
+        while (i < args.size()) {
+            while (i < args.size() && args[i] == ' ') ++i;
+            size_t j = i;
+            while (j < args.size() && args[j] != ' ') ++j;
+            if (j > i) argv.push_back(args.substr(i, j - i));
+            i = j;
+        }
+        for (size_t k = 0; k < argv.size(); ++k) {
+            const std::string& a = argv[k];
+            if (a == "--still" && k + 1 < argv.size()) g_stillTime = atof(argv[++k].c_str());
+            else if (a == "--out" && k + 1 < argv.size()) g_stillOut = argv[++k];
+            else if (a == "--repeat" && k + 1 < argv.size()) g_stillRepeat = atoi(argv[++k].c_str());
+            else if (!a.empty() && a[0] != '-') smtPath = a;
+        }
+    }
 
     Log("[Start] Demo Runtime — loading %s", smtPath.c_str());
     sm::Show show;
@@ -372,7 +405,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     Log("[GL] %s / %s", glGetString(GL_RENDERER), glGetString(GL_VERSION));
 
     glx::ShaderCache shaders;
-    g_shaders = &shaders;  // v60: make accessible from WndProc for F4 hot-reload
     shaders.init(shaderDir);
     glx::FBOPool fbos;
     fbos.init(g_width, g_height);
@@ -383,13 +415,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     }
     Log("[OK] %d shader programs compiled", compiled);
 
+    // v61: Still mode — рендерим один кадр и выходим (быстрые проверки цвета/кадра).
+    if (g_stillTime >= 0.0) {
+        if (g_stillOut.empty()) g_stillOut = "still.png";
+        int warm = (g_stillRepeat > 0) ? g_stillRepeat : 1;
+        for (int i = 0; i < warm; ++i) glx::renderFrame(show, g_stillTime, shaders, fbos);
+        glFinish();
+        captureFramePNG(g_stillOut.c_str(), g_width, g_height);
+        Log("[Still] Saved %s at T=%.2fs (%dx%d, warmup=%d)",
+            g_stillOut.c_str(), g_stillTime, g_width, g_height, warm);
+        if (g_hglrc) { wglMakeCurrent(nullptr, nullptr); wglDeleteContext(g_hglrc); }
+        if (g_hdc && g_hwnd) ReleaseDC(g_hwnd, g_hdc);
+        if (g_hwnd) DestroyWindow(g_hwnd);
+        if (hMutex) { ReleaseMutex(hMutex); CloseHandle(hMutex); }
+        Log("[Exit] Demo Runtime ended (still mode)");
+        return 0;
+    }
+
     double startTime = getTime();
     int frameCount = 0;
     double lastDiag = 0.0;
     double prevT = 0.0;   // для dt (расчёт FPS)
     MSG msg = {};
     Log("[Loop] Entering render loop, duration=%.1fs", show.duration);
-    Log("[Help] F1 = FPS | F2 = capture BMP | F3 = record PNG | F4 = hot-reload shaders");
+    Log("[Help] F1 = toggle FPS | F2 = capture BMP | F3 = toggle recording | min/max/avg tracked always");
     while (g_running) {
         while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
             if (msg.message == WM_QUIT) { g_running = false; break; }
@@ -409,7 +458,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         }
 
         // v60: Auto-capture at scene boundaries + 2s.
-        if (g_captureIdx < 7 && T >= g_captureTimes[g_captureIdx]) {
+        if (g_captureIdx < 8 && T >= g_captureTimes[g_captureIdx]) {
             captureFrame(g_captureNames[g_captureIdx], g_width, g_height);
             Log("[Capture] Saved %s (%dx%d → 640x360)", g_captureNames[g_captureIdx], g_width, g_height);
             g_captureIdx++;

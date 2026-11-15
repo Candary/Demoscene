@@ -1,0 +1,878 @@
+{
+  "version": 1,
+  "meta": {
+    "duration": 223.0,
+    "fps": 60,
+    "width": 1280,
+    "height": 720,
+    "seed": 2026
+  },
+  "audio": {
+    "bpm": 128.0,
+    "offset": 0.0,
+    "beats_per_bar": 4,
+    "energy": [
+      0.05,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.55,
+      0.6,
+      0.7,
+      0.78,
+      0.82,
+      0.85,
+      0.88,
+      0.92,
+      0.98,
+      1.0,
+      1.0,
+      0.98,
+      0.92,
+      0.85,
+      0.9,
+      0.95,
+      0.92,
+      0.88,
+      0.85,
+      0.92,
+      1.0,
+      1.0,
+      0.98,
+      0.92,
+      0.85,
+      0.78,
+      0.7,
+      0.62,
+      0.55,
+      0.48,
+      0.4,
+      0.33,
+      0.27,
+      0.22,
+      0.18,
+      0.15,
+      0.12,
+      0.1,
+      0.08,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.55,
+      0.5,
+      0.45,
+      0.4
+    ],
+    "markers": [],
+    "sections": [
+      {
+        "start": 0.0
+      },
+      {
+        "start": 27.0
+      },
+      {
+        "start": 77.0
+      },
+      {
+        "start": 127.0
+      },
+      {
+        "start": 181.0
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "track": 10,
+      "kind": "scene",
+      "effect": "nebula_raymarch",
+      "start": 0.0,
+      "end": 27.0,
+      "clip_start": 0.0,
+      "duration": 25.0,
+      "blend": "normal",
+      "seed": 11111,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "clamp"
+      },
+      "uniforms": {
+        "uPrimaryColor": [
+          0.05,
+          0.1,
+          0.3
+        ],
+        "uAccentColor": [
+          0.2,
+          0.6,
+          0.9
+        ],
+        "uIntensity": 0.8,
+        "uMotionSpeed": 1.0,
+        "uPulse": 0.0
+      },
+      "arrays": {}
+    },
+    {
+      "id": "s2",
+      "track": 10,
+      "kind": "scene",
+      "effect": "sphere_scene",
+      "start": 23.0,
+      "end": 52.0,
+      "clip_start": 25.0,
+      "duration": 25.0,
+      "blend": "normal",
+      "seed": 22222,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "clamp"
+      },
+      "uniforms": {
+        "uColor": [
+          0.720878431372549,
+          0.589113725490196,
+          0.45734901960784313
+        ],
+        "uGlow": 1.2,
+        "uOrbit": 0.0
+      },
+      "arrays": {},
+      "prewarm": 20.0
+    },
+    {
+      "id": "s3",
+      "track": 10,
+      "kind": "scene",
+      "effect": "particle_swarm",
+      "start": 48.0,
+      "end": 77.0,
+      "clip_start": 50.0,
+      "duration": 25.0,
+      "blend": "normal",
+      "seed": 33333,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "clamp"
+      },
+      "uniforms": {
+        "uColor": [
+          0.8339388235294118,
+          1.0,
+          0.21903686274509815
+        ],
+        "uSwarm": 0.7,
+        "uBeatKick": 0.0
+      },
+      "arrays": {},
+      "prewarm": 45.0
+    },
+    {
+      "id": "s4",
+      "track": 10,
+      "kind": "scene",
+      "effect": "anxiety_mist",
+      "start": 73.0,
+      "end": 102.0,
+      "clip_start": 75.0,
+      "duration": 25.0,
+      "blend": "normal",
+      "seed": 44444,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "clamp"
+      },
+      "uniforms": {
+        "uPrimaryColor": [
+          0.25,
+          0.05,
+          0.1
+        ],
+        "uAccentColor": [
+          0.8,
+          0.15,
+          0.1
+        ],
+        "uIntensity": 1.2,
+        "uMotionSpeed": 1.5,
+        "uWarmth": 0.85
+      },
+      "arrays": {},
+      "prewarm": 70.0
+    },
+    {
+      "id": "s5",
+      "track": 10,
+      "kind": "scene",
+      "effect": "morph_grid",
+      "start": 98.0,
+      "end": 127.0,
+      "clip_start": 100.0,
+      "duration": 25.0,
+      "blend": "normal",
+      "seed": 55555,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "clamp"
+      },
+      "uniforms": {
+        "uColor": [
+          0.720878431372549,
+          0.589113725490196,
+          0.45734901960784313
+        ],
+        "uMorph": 0.5,
+        "uSpeed": 1.0
+      },
+      "arrays": {},
+      "prewarm": 95.0
+    },
+    {
+      "id": "s6",
+      "track": 10,
+      "kind": "scene",
+      "effect": "cozy_room_sdf",
+      "start": 123.0,
+      "end": 181.5,
+      "clip_start": 125.0,
+      "duration": 55.0,
+      "blend": "normal",
+      "seed": 66666,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "clamp"
+      },
+      "uniforms": {
+        "uLightColor": [
+          0.720878431372549,
+          0.589113725490196,
+          0.45734901960784313
+        ],
+        "uCamAngle": 0.15
+      },
+      "arrays": {
+        "uPrimitives": [
+          0.0,
+          0.0,
+          5.0,
+          0.1,
+          5.0,
+          0.0,
+          -1.5,
+          0.0,
+          0.0,
+          0.8,
+          0.7,
+          0.5,
+          0.0,
+          0.0,
+          5.0,
+          3.0,
+          0.1,
+          0.0,
+          0.0,
+          -2.5,
+          0.0,
+          0.4,
+          0.3,
+          0.25,
+          0.0,
+          0.0,
+          0.1,
+          3.0,
+          5.0,
+          -2.5,
+          0.0,
+          0.0,
+          0.0,
+          0.5,
+          0.35,
+          0.25,
+          0.0,
+          0.0,
+          0.1,
+          3.0,
+          5.0,
+          2.5,
+          0.0,
+          0.0,
+          0.0,
+          0.5,
+          0.35,
+          0.25,
+          0.0,
+          0.0,
+          1.5,
+          0.1,
+          1.0,
+          0.0,
+          -0.5,
+          0.0,
+          0.0,
+          0.4,
+          0.25,
+          0.15,
+          1.0,
+          0.0,
+          0.2,
+          0.2,
+          0.2,
+          0.0,
+          0.1,
+          0.0,
+          0.0,
+          1.0,
+          0.85,
+          0.4,
+          2.0,
+          0.0,
+          0.08,
+          0.1,
+          0.08,
+          0.5,
+          -0.42,
+          0.3,
+          0.0,
+          0.9,
+          0.9,
+          0.95,
+          0.0,
+          0.0,
+          0.3,
+          0.05,
+          0.4,
+          -0.4,
+          -0.43,
+          0.2,
+          0.3,
+          0.7,
+          0.2,
+          0.2,
+          2.0,
+          0.0,
+          0.15,
+          0.25,
+          0.15,
+          -1.8,
+          -1.2,
+          1.5,
+          0.0,
+          0.55,
+          0.3,
+          0.2,
+          0.0,
+          0.0,
+          1.5,
+          1.5,
+          0.05,
+          2.4,
+          0.3,
+          -1.0,
+          0.0,
+          0.7,
+          0.85,
+          1.0
+        ]
+      },
+      "prewarm": 120.0
+    },
+    {
+      "id": "s7",
+      "track": 10,
+      "kind": "scene",
+      "effect": "morphing_figures",
+      "start": 180.5,
+      "end": 211.0,
+      "clip_start": 181.0,
+      "duration": 30.0,
+      "blend": "normal",
+      "seed": 77777,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "clamp"
+      },
+      "uniforms": {},
+      "arrays": {},
+      "prewarm": 177.5
+    },
+    {
+      "id": "s8",
+      "track": 10,
+      "kind": "scene",
+      "effect": "lava_cracks",
+      "start": 211.0,
+      "end": 223.0,
+      "clip_start": 211.0,
+      "duration": 10.0,
+      "blend": "normal",
+      "seed": 88888,
+      "opacity": "1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "clamp"
+      },
+      "uniforms": {
+        "uPrimaryColor": [
+          0.02,
+          0.02,
+          0.02
+        ],
+        "uAccentColor": [
+          1.0,
+          0.4,
+          0.1
+        ],
+        "uIntensity": 1.5,
+        "uMotionSpeed": 0.5,
+        "uPulse": 0.3
+      },
+      "arrays": {},
+      "prewarm": 208.0
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t1",
+      "track": 10,
+      "kind": "transition",
+      "effect": "crossfade",
+      "start": 23.0,
+      "end": 27.0,
+      "clip_start": 23.0,
+      "duration": 4.0,
+      "blend": "normal",
+      "seed": 10101,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "smoothstep"
+      },
+      "uniforms": {},
+      "arrays": {},
+      "between": [
+        "s1",
+        "s2"
+      ],
+      "prewarm": 20.0
+    },
+    {
+      "id": "t2",
+      "track": 10,
+      "kind": "transition",
+      "effect": "flash",
+      "start": 48.0,
+      "end": 52.0,
+      "clip_start": 48.0,
+      "duration": 4.0,
+      "blend": "normal",
+      "seed": 20202,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "smoothstep"
+      },
+      "uniforms": {
+        "uColor": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "uPeak": 1.0
+      },
+      "arrays": {},
+      "between": [
+        "s2",
+        "s3"
+      ],
+      "prewarm": 45.0
+    },
+    {
+      "id": "t3",
+      "track": 10,
+      "kind": "transition",
+      "effect": "crossfade",
+      "start": 73.0,
+      "end": 77.0,
+      "clip_start": 73.0,
+      "duration": 4.0,
+      "blend": "normal",
+      "seed": 30303,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "smoothstep"
+      },
+      "uniforms": {},
+      "arrays": {},
+      "between": [
+        "s3",
+        "s4"
+      ],
+      "prewarm": 70.0
+    },
+    {
+      "id": "t4",
+      "track": 10,
+      "kind": "transition",
+      "effect": "flash",
+      "start": 98.0,
+      "end": 102.0,
+      "clip_start": 98.0,
+      "duration": 4.0,
+      "blend": "normal",
+      "seed": 40404,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "smoothstep"
+      },
+      "uniforms": {
+        "uColor": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "uPeak": 1.0
+      },
+      "arrays": {},
+      "between": [
+        "s4",
+        "s5"
+      ],
+      "prewarm": 95.0
+    },
+    {
+      "id": "t5",
+      "track": 10,
+      "kind": "transition",
+      "effect": "crossfade",
+      "start": 123.0,
+      "end": 127.0,
+      "clip_start": 123.0,
+      "duration": 4.0,
+      "blend": "normal",
+      "seed": 50505,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "smoothstep"
+      },
+      "uniforms": {},
+      "arrays": {},
+      "between": [
+        "s5",
+        "s6"
+      ],
+      "prewarm": 120.0
+    },
+    {
+      "id": "t6",
+      "track": 10,
+      "kind": "transition",
+      "effect": "crossfade",
+      "start": 180.5,
+      "end": 181.5,
+      "clip_start": 180.5,
+      "duration": 1.0,
+      "blend": "normal",
+      "seed": 60606,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "smoothstep"
+      },
+      "uniforms": {},
+      "arrays": {},
+      "between": [
+        "s6",
+        "s7"
+      ],
+      "prewarm": 177.5
+    },
+    {
+      "id": "t7",
+      "track": 10,
+      "kind": "transition",
+      "effect": "crossfade",
+      "start": 211.0,
+      "end": 213.0,
+      "clip_start": 211.0,
+      "duration": 2.0,
+      "blend": "normal",
+      "seed": 70707,
+      "between": [
+        "s7",
+        "s8"
+      ],
+      "opacity": "1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "smoothstep"
+      },
+      "uniforms": {},
+      "arrays": {},
+      "prewarm": 208.0
+    }
+  ],
+  "post_effects": [
+    {
+      "id": "blm_bright",
+      "track": 24,
+      "kind": "post",
+      "effect": "bloom_bright",
+      "start": 0.0,
+      "end": 223.0,
+      "clip_start": 0.0,
+      "duration": 223.0,
+      "blend": "normal",
+      "seed": 77007,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "clamp"
+      },
+      "uniforms": {
+        "uThreshold": 0.6,
+        "uIntensity": 1.0
+      },
+      "arrays": {}
+    },
+    {
+      "id": "blm_blurh",
+      "track": 24,
+      "kind": "post",
+      "effect": "bloom_blur",
+      "start": 0.0,
+      "end": 223.0,
+      "clip_start": 0.0,
+      "duration": 223.0,
+      "blend": "normal",
+      "seed": 77008,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "clamp"
+      },
+      "uniforms": {
+        "uDirection": [
+          1.0,
+          0.0
+        ]
+      },
+      "arrays": {}
+    },
+    {
+      "id": "blm_blurv",
+      "track": 24,
+      "kind": "post",
+      "effect": "bloom_blur",
+      "start": 0.0,
+      "end": 223.0,
+      "clip_start": 0.0,
+      "duration": 223.0,
+      "blend": "normal",
+      "seed": 77009,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "clamp"
+      },
+      "uniforms": {
+        "uDirection": [
+          0.0,
+          1.0
+        ]
+      },
+      "arrays": {}
+    },
+    {
+      "id": "blm_add",
+      "track": 24,
+      "kind": "post",
+      "effect": "passthrough",
+      "start": 0.0,
+      "end": 223.0,
+      "clip_start": 0.0,
+      "duration": 223.0,
+      "blend": "normal",
+      "seed": 77010,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "clamp"
+      },
+      "uniforms": {},
+      "arrays": {}
+    },
+    {
+      "id": "vig",
+      "track": 25,
+      "kind": "post",
+      "effect": "vignette",
+      "start": 0.0,
+      "end": 223.0,
+      "clip_start": 0.0,
+      "duration": 223.0,
+      "blend": "normal",
+      "seed": 99001,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "clamp"
+      },
+      "uniforms": {
+        "uStrength": 0.35,
+        "uSoftness": 0.5
+      },
+      "arrays": {}
+    },
+    {
+      "id": "grn",
+      "track": 25,
+      "kind": "post",
+      "effect": "grain",
+      "start": 0.0,
+      "end": 223.0,
+      "clip_start": 0.0,
+      "duration": 223.0,
+      "blend": "normal",
+      "seed": 88008,
+      "opacity": "n:1.0",
+      "progress": {
+        "args": [
+          0.0,
+          1.0
+        ],
+        "var": "p",
+        "func": "clamp"
+      },
+      "uniforms": {
+        "uAmount": 0.03,
+        "uExposure": 0.55
+      },
+      "arrays": {}
+    }
+  ],
+  "finish": {
+    "id": "fin",
+    "track": 30,
+    "kind": "event",
+    "effect": "finish",
+    "start": 223.0,
+    "end": 223.0,
+    "clip_start": 223.0,
+    "duration": 0.0,
+    "blend": "normal",
+    "seed": 77777,
+    "opacity": "n:1.0",
+    "progress": {
+      "args": [
+        0.0,
+        1.0
+      ],
+      "var": "p",
+      "func": "clamp"
+    },
+    "uniforms": {},
+    "arrays": {},
+    "prewarm": 208.0
+  },
+  "palettes": {
+    "p": {
+      "primary": "#000000",
+      "accent": "#ffffff"
+    }
+  }
+}

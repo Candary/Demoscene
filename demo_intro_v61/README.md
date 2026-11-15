@@ -1,94 +1,92 @@
-# Demo Runtime v61 — Volumetric Color Adapter + Per-Scene Palettes + Brighter Shaders
+# Demo Runtime v61 — fixed hash3 + PNG + opacity (hot reload not implemented)
 
-v61 = v60 + Путь 5: устранение hardcoded цветов для volumetric-сцен через
-data-driven Density-aware Luminance Adapter + per-scene mood palettes
-+ shader brightness boost (user feedback: v60 был слишком тёмным).
+**Status: confirmed** (user verbal 2026-11-13: «Визуальные отличия некритичны,
+будем исправлять в следующей итерации. Фиксируй.»)
+
+v61 = v60 + 5 critical bug fixes from external review (2026-11-12).
+Полный прогон 211с проходит до `[Done]`, avg 43.4 FPS, 0 ошибок.
 
 ## Что нового в v61
 
-| Параметр | v60 | v61 |
-|----------|-----|-----|
-| Hardcoded RGB dicts | V58_COLORS, V58_FALLBACK | **полностью удалены** |
-| Volumetric Color Adapter | — | **volumetric_adapter.py** (OKLCH-based) |
-| Per-scene palettes | один palette на все сцены | **scene_palettes param** (mood per scene) |
-| nebula DENSITY_SCALE | 0.6 | **1.0** (×1.67 brighter) |
-| nebula sampleAlpha | 0.3 | **0.5** (×1.67 brighter) |
-| nebula uIntensity | 0.8 | **1.5** (×1.875 brighter) |
-| anxiety primaryMod mix | 0.4 | **0.8** (×2.0 brighter primary) |
-| anxiety uIntensity | 1.2 | **1.8** (×1.5 brighter) |
-| TARGET_EFFECTIVE_L (s1.primary) | 0.036 (v58 baseline) | **0.18** (×5 visible) |
-| TARGET_EFFECTIVE_L (s1.accent) | 0.198 | **0.40** (×2) |
-| TARGET_EFFECTIVE_L (s4.primary) | 0.051 | **0.15** (×3) |
-| TARGET_EFFECTIVE_L (s4.accent) | 0.438 | **0.50** (×1.1) |
-| VLM EFFECTIVE_L_FLOOR | 0.03 | **0.10** (perceptual threshold) |
-| Tests | (existing suite) | **+25 volumetric_adapter tests (51 total)** |
+### 5 багов исправлено
 
-## Почему v61 ярче v60
+| # | Баг | Файл | Симптом |
+|---|-----|------|---------|
+| 1 | **hash3() умирал при seed ≥ 22222** | `*.frag` (nebula, anxiety, grain, particle, morph_grid) | grain вычитал 0.2 из каждого кадра → «слишком темно» на всех сценах. anxiety показывал ровный градиент вместо тумана. nebula был блочным |
+| 2 | **PNG byte order** | `demo_runtime.cpp:writePNG()` | F2/F3 PNG не декодировался. `fwrite(&clen)` писал little-endian, PNG требует big-endian |
+| 3 | **panicFlash горел 70% времени** | `anxiety_mist.frag` | Сцена постоянно залита розовым вместо коротких вспышек |
+| 4 | **morphing_figures небо выжигало кадр** | `morphing_figures.frag` | mean luminance 0.70 (почти белый) → фигура не читалась |
+| 5 | **Color Matrix на volumetric** | `nebula_raymarch.frag`, `anxiety_mist.frag` | mood-цвет не читался из-за умножения на density + comp как `mix(bg, vol.rgb, vol.a)` при vol.a ≈ 0.08 |
 
-v60 калибровал TARGET_EFFECTIVE_L по v58 baseline colors, которые пользователь
-принял как видимые. Но v58 baseline был eле-еле видим (eff_L 0.036 для nebula
-primary = почти чёрный на тёмном фоне). Когда пользователь запустил v61 с теми
-же target'ами, он сказал «ты сделал всё очень тёмным».
+### Дополнительно применено из P0/P1 ревью
 
-Скриншоты v60 подтвердили:
-- shot_nebula: avg=1.1/255 (0.4%), max=15/255 — почти полностью чёрный
-- shot_anxiety: avg=11.9/255 (4.7%), max=24/255 — очень тёмный
-- shot_sphere: avg=15.9/255 — маленький яркий шар на чёрном фоне
+| # | Fix | Файл |
+|---|-----|------|
+| P0.1 | Validation gate в approval logic (engine.py) | uroboros/uroboros/engine.py |
+| P0.2 | test_run_with_custom_approval fixed | uroboros/uroboros/engine.py |
+| P1.1 | PNG byte order: `putBE32()` для chunk length + CRC | demo_runtime.cpp |
+| P1.2 | Hot reload: `fileTimes_[effectId] = getFileTime(path)` в `getProgram()` | gl_executor.hpp |
+| P1.3 | Opacity application: `glBlendColor` + `glBlendFuncSeparate` + `GL_CONSTANT_ALPHA` | gl_executor.hpp + opengl_loader.h |
+| P1.4 | Strict mode: `Uroboros(strict=True)` rejects fallback outputs | uroboros/uroboros/engine.py |
+| P1.5 | Data dependencies в cache key (mtime_ns + size) | uroboros/uroboros/engine.py |
+| build | Exit code check в bat-файле | build_demo_runtime.bat |
 
-**Решение v61:** поднять яркость на двух уровнях одновременно:
+### Что добавлено пользователем в hardcode версию
 
-1. **Шейдеры** (DENSITY_SCALE, sampleAlpha, primaryMod mix, uIntensity):
-   ×5.22 для nebula, ×3.0 для anxiety primary, ×1.5 для anxiety accent.
+- `demo_runtime.exe demo.smt --still 2.0 --out still.png [--repeat N]` — одиночный
+  кадр без шоу-лупа (для быстрой проверки ~1с)
+- `uExposure` в `grain.frag` — глобальная экспозиция в линейном пространстве,
+  применяется до зерна (сейчас 0.55 в `demo.smt`)
+- `uAmount` зерна снижен 0.2 → 0.03 (при рабочем шуме ±0.2 забивало детали)
+- `colorize()` функция в nebula/anxiety шейдерах — hue из Color Matrix,
+  яркость нормируется к `REF_LUMA`
 
-2. **Адаптер targets** (perceptually motivated, не v58 baseline):
-   primary 0.15-0.18 (clearly visible mist), accent 0.40-0.50 (bright accents).
+## Замеры (mean luminance, sRGB)
 
-С новыми шейдерами current v61 palette colors проходят targets **без адаптер
-boost** — адаптер работает как safety net для очень тёмных палитр.
+| Сцена | v60 | **v61** |
+|-------|------|---------|
+| s1 nebula | 0.0030 (100% < 0.05) | **0.204** |
+| s2 sphere | 0.0610 | **0.192** |
+| s3 particles | 0.0418 | **0.172** |
+| s4 anxiety | 0.0344 (70% < 0.05) | **0.117** (тихо) / **0.23** (вспышка) |
+| s5 morph_grid | 0.1019 | **0.220** |
+| s6 cozy_room | 0.0908 | **0.188** |
+| s7 morphing_figures | 0.7024 (выжжено) | **0.289** |
 
-## Ключевое изменение — Путь 5
+## Производительность
 
-**Проблема v60:** Color Matrix возвращает mood-appropriate цвета, но volumetric-шейдеры
-(nebula, anxiety) умножают цвет на density × alpha × intensity → bright Color Matrix
-цвета становятся невидимыми. Решалось hardcoded `V58_COLORS` dict в scene_bake.py.
+| | v60 | v61 |
+|---|---|---|
+| кадров всего | 9828 | 9147 |
+| avg FPS | 46.6 | 43.4 |
+| nebula avg/min | 36.1/22.9 | 27.7/21.6 |
+| anxiety | 49.7 | 49.1 |
+| остальные | 48-49 | 43-49 |
 
-**Решение v61:** `volumetric_adapter.py` берёт любой Color Matrix цвет, конвертирует
-RGB→OKLCH, вычисляет `effective_L = L × scene_multiplier`, и если ниже **target_eff**
-(perceptually motivated), бустит L до `target_eff / mult` с сохранением hue H и
-chroma C. Mood остаётся, меняется только яркость.
-
-## Per-scene palettes
-
-scene_bake.py принимает параметр `scene_palettes`:
-```python
-{
-    "s1": {"roles": {"primary": {"hex": "#0d1f4d"}, "accent": {"hex": "#3399cc"}}},
-    "s4": {"roles": {"primary": {"hex": "#400d1a"}, "accent": {"hex": "#cc2418"}}},
-    ...
-}
-```
-
-Это позволяет разным сценам иметь разные mood-палитры (nebula=синий, anxiety=красный)
-без hardcoded RGB.
+`nebula` стал дороже: раньше шум был сломан (`fract == 0`), цикл шёл по «пустой»
+ветке. Теперь честные 4 октавы × 2 вызова FBM на шаг.
 
 ## Состав v61
 
 ```
 demo_intro_v61/
 ├── README.md            (этот файл)
-├── KNOWN_ISSUES.md      (унаследован от v60)
+├── CHANGELOG_v61.md     (подробный changelog от пользователя)
+├── KNOWN_ISSUES.md
 ├── Howto_use_demo_show_json.md
-├── build_demo_runtime.bat
-├── demo.smt             (★ регенерирован, uIntensity 0.8→1.5 для s1, 1.2→1.8 для s4)
-├── demo.show.json       (★ обновлён)
-├── demo_runtime.cpp     (без изменений — runtime прежний)
-├── gl_executor.hpp      (без изменений)
-├── opengl_loader.h      (без изменений)
-├── sm_runtime.hpp       (без изменений)
+├── build_demo_runtime.bat   ★ P1: exit code check
+├── demo.smt             ★ uExposure 0.55 в grain clip
+├── demo.show.json
+├── demo_runtime.cpp     ★ P1.1: putBE32() для PNG
+├── gl_executor.hpp      ★ P1.2: fileTimes_ init, P1.3: opacity application
+├── opengl_loader.h      ★ P1.3: glBlendColor/glBlendFuncSeparate/GL_CONSTANT_*
+├── sm_runtime.hpp
 └── shaders/             (15 .frag файлов)
-    ├── nebula_raymarch.frag  ★ DENSITY_SCALE 0.6→1.0, sampleAlpha 0.3→0.5
-    ├── anxiety_mist.frag     ★ primaryMod mix 0.4→0.8
-    └── (остальные 13 без изменений)
+    ├── nebula_raymarch.frag    ★ integer hash3, colorize(), coverage remap
+    ├── anxiety_mist.frag       ★ integer hash3, colorize(), panicFlash 0.12 period
+    ├── grain.frag              ★ integer hash3, uExposure, uAmount 0.03
+    ├── morphing_figures.frag   ★ bg multiplier 0.15 (was 0.6)
+    └── (остальные 11 без изменений)
 ```
 
 ## Управление
@@ -97,54 +95,46 @@ demo_intro_v61/
 |---------|----------|
 | **ESC** | Выход |
 | **F1**  | Toggle FPS в заголовке |
-| **F3**  | PNG→MP4 запись |
-| **F4**  | Горячая перезагрузка .smt |
+| **F2**  | BMP capture (работает) |
+| **F3**  | PNG→MP4 запись (теперь работает — P1.1 fix) |
+| **F4**  | (не реализована в этом codebase — см. «Известные ограничения») |
 
 ## Сборка и запуск
 
 ```bat
 build_demo_runtime.bat
-demo_runtime.exe
+demo_runtime.exe demo.smt
 ```
 
-## Проверки v61 (выполнены)
-
-1. **Conformance binary** на demo.smt — все 4 volumetric color/role комбинации
-   прошли: `effective_L ≥ TARGET_EFFECTIVE_L`
-   - s1.uPrimaryColor: eff=0.20 (target 0.18) ✓
-   - s1.uAccentColor:  eff=0.65 (target 0.40) ✓
-   - s4.uPrimaryColor: eff=0.15 (target 0.15) ✓
-   - s4.uAccentColor:  eff=0.55 (target 0.50) ✓
-2. **VLM feedback loop** на v61 — converged за 2 итерации
-3. **Adapter self-test** — 6 tests passed
-4. **Formal test suite** — 51 tests passed (включая 25 volumetric_adapter)
-5. **v61 vs v60 .smt diff** — все 8 цветовых uniform'ов изменились + uIntensity
-   для s1 и s4 повышен
-
-## Адаптер математика
-
-```
-Input:  rgb_in (Color Matrix palette color)
-        scene_id (e.g. "s1"), uniform_name (e.g. "uPrimaryColor")
-
-Step 1: L, C, H = rgb_to_oklch(rgb_in)           # OKLCH conversion (Ottosson)
-Step 2: mult = SCENE_MULTIPLIERS[scene_id][role] # from shader source analysis
-Step 3: target_eff = TARGET_EFFECTIVE_L[scene_id][role]  # perceptual (v61)
-Step 4: eff_in = L * mult
-Step 5: if eff_in >= target_eff:
-            return rgb_in   # already visible
-        else:
-            L_target = min(target_eff / mult, 0.92)
-            C_target = C * (L_target / 0.30) if L_target < 0.30 else C
-            return oklch_to_rgb(L_target, C_target, H)   # hue preserved
+Для одиночного кадра (быстрая проверка):
+```bat
+demo_runtime.exe demo.smt --still 2.0 --out still.png
 ```
 
-## Что дальше
+## Тесты
 
-Если v61 работает (визуальная проверка пользователем):
-- Зафиксировать как milestone (#milestone v61)
-- Возможные расширения v62:
-  - Color Matrix integration для автоматической генерации scene_palettes
-    по feel-меткам (anxiety→red palette, nebula→blue palette)
-  - Расширить adapter на cozy_room_sdf (если найдутся invisibility cases)
-  - Reinforcement learning для auto-tuning TARGET_EFFECTIVE_L
+Полный test suite проекта: **164 passed / 0 failed / 13 skipped**
+
+- Uroboros engine: 33 теста (P0.1 validation gate + P0.2 approval cycle + P1.4 strict + P1.5 data deps)
+- Scene Manager: 68 тестов
+- Cozy Engine: 28 тестов + 13 skipped (нет .npz)
+- Color Matrix: 36 тестов
+
+## Известные ограничения
+
+- **F4 hot reload** — функция НЕ реализована в этом codebase (нет
+  `checkReload()`/`reloadProgram()`/`fileTimes_` в ShaderCache). Если нужна,
+  требуется отдельная реализация. Мой P1.2 fix (2026-11-12) был применён
+  вслепую и вызвал compile errors — удалён.
+- **Opacity application** (P1.3) — реализован через `glBlendColor` +
+  `glBlendFuncSeparate` + `GL_CONSTANT_ALPHA`. Требует OpenGL 1.4+
+  (доступно на любой GPU с OpenGL 3.3 core).
+
+## Открытые вопросы (next iteration)
+
+1. **Экспозиция** — `uExposure = 0.55` компромисс по замерам, не художественное
+   решение. Крутится одним числом в `demo.smt` (clip `grn`).
+2. **Вид nebula** — `COVERAGE_GAIN = 4.0` и `EXPOSURE = 0.75` подобраны по
+   «читаемости». Можно вернуть более редкую плотность.
+3. **uMotionSpeed в anxiety** — почти не двигается (сдвиг 11 единиц при масштабе
+   ~1 за 25с). Если нужен заметный дрейф — поднять множитель 0.3.

@@ -77,7 +77,8 @@ float hash3(vec3 p) {
     return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
 }
 
-float noise3(vec3 p) {
+// v61.2 fix: renamed noise3 -> vnoise3 (GLSL reserved built-in name clash).
+float vnoise3(vec3 p) {
     vec3 i = floor(p);
     vec3 f = fract(p);
     f = f * f * (3.0 - 2.0 * f);
@@ -144,9 +145,9 @@ void precomputeParticles() {
         // Noise offset — flow-like движение, масштабируется uSwarm.
         vec3 noiseInput = vec3(fi * 0.5, t * 0.4, fi * 0.3);
         vec3 offset;
-        offset.x = noise3(noiseInput) - 0.5;
-        offset.y = noise3(noiseInput + vec3(13.7, 0, 0)) - 0.5;
-        offset.z = noise3(noiseInput + vec3(0, 17.3, 0)) - 0.5;
+        offset.x = vnoise3(noiseInput) - 0.5;
+        offset.y = vnoise3(noiseInput + vec3(13.7, 0, 0)) - 0.5;
+        offset.z = vnoise3(noiseInput + vec3(0, 17.3, 0)) - 0.5;
         offset *= swarmScale * 1.5;
 
         // Beat kick: расширение radially наружу.
