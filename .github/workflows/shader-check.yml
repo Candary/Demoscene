@@ -100,11 +100,15 @@ jobs:
                   )
 
           # Check fin clip has effect="finish"
+          # Format: clip <id> <order> <kind> <effect> <start> <end> ...
+          # So split()[4] is the effect field.
           fin_line = next((l for l in lines if l.strip().startswith('clip fin ')), None)
-          if fin_line and 'finish' not in fin_line.split()[3]:
-              errors.append(
-                  f"fin clip effect should be 'finish', got '{fin_line.split()[3]}'"
-              )
+          if fin_line:
+              parts = fin_line.split()
+              if len(parts) < 5 or parts[4] != 'finish':
+                  errors.append(
+                      f"fin clip effect should be 'finish', got '{parts[4] if len(parts) > 4 else '<missing>'}'"
+                  )
 
           if errors:
               print("SMT sanity check FAILED:")
