@@ -6,7 +6,81 @@
 предупреждений, полный прогон 211 с проходит до `[Done]`. Все правки — в этом каталоге,
 оригинальные шейдеры сохранены рядом как `*.v60.bak`.
 
+---
+
+## v61.2 — релиз 2026-11-15 (пуш в GitHub `Candary/Demoscene` PR #v61.2)
+
+**Контекст**: после v61.1 пользователь сообщил «чёрный экран на всех сценах» при запуске
+`demo_runtime.exe demo.smt`. Диагностика `trace.log` показала `[OK] 15 shader programs compiled`
+вместо ожидаемых 21. Багрепорт и доказательства — в `BUGREPORT_v61.md`.
+
+### Корневые причины
+
+1. **5 post-processing шейдеров не компилировались** (duplicate `float intensity` declaration).
+   Поскольку `grain.frag` — единственный op, пишущий в default framebuffer, его молчаливый
+   пропуск оставлял back buffer пустым → «чёрный экран». NVIDIA driver reject'ит повторное
+   объявление локальной переменной в GLSL 330 core (§4.2.2 Identifier Redefinition).
+2. **`noise3` name clash в 4 scene shaders** — зарезервированное GLSL built-in имя.
+   NVIDIA принимает (lenient), но strict-компиляторы reject'ят.
+3. **`clip fin 30 event 223.0 ...`** — duration утёк в поле effect (должно быть `"finish"`).
+4. **`seg 181.5 211.0` содержал обе цепочки s7 + s8** (16 ops под cost=8 заголовком).
+   t7 crossfade не использовался ни в одном сегменте, не было сегмента для 213–223 сек.
+5. per-scene FPS статистика не покрывала t7/s8.
+
+### Применённые фиксы
+
+| Файл                         | Изменение                                                            |
+|------------------------------|----------------------------------------------------------------------|
+| shaders/passthrough.frag     | удалена дублирующая `float intensity` строка                         |
+| shaders/bloom_bright.frag    | то же                                                                |
+| shaders/bloom_blur.frag      | то же                                                                |
+| shaders/vignette.frag        | то же                                                                |
+| shaders/grain.frag           | то же                                                                |
+| shaders/bloom.frag           | то же (cleanup, файл не используется в demo.smt)                     |
+| shaders/nebula_raymarch.frag | `noise3` → `vnoise3` (1 def + 8 calls)                               |
+| shaders/particle_swarm.frag  | `noise3` → `vnoise3` (1 def + 3 calls)                               |
+| shaders/anxiety_mist.frag    | `noise3` → `vnoise3` (1 def + 2 calls)                               |
+| shaders/lava_cracks.frag     | `noise3` → `vnoise3` (1 def + 1 call)                                |
+| demo.smt                     | fin effect `223.0` → `finish`; sections 5 → 6 (добавлена 211.0)      |
+| demo.smt                     | seg 181.5–211.0 разбит на 3: 181.5–211 (s7), 211–213 (t7), 213–223 (s8) |
+| demo_runtime.cpp             | g_scenes[] +transition_7 (211–213), +lava_cracks (213–223)           |
+| demo_runtime.cpp             | g_captureTimes +T=217 → shot_lava.bmp; проверка `< 8`                |
+| .github/workflows/shader-check.yml | **NEW** CI: glslangValidator strict compile + SMT continuity check |
+
+### Верификация
+
+* `glslangValidator --glsl-version 330 -S frag` — все 16 шейдеров компилируются без ошибок.
+* SMT: 22 clips, **15 segments** (было 13), непрерывные, duration 0–223.0с.
+* Runtime trace.log после фиксов:
+  * `[OK] 21 shader programs compiled` (было 15)
+  * `[OK] SMT loaded: 22 clips, 15 segments` (было 13 segments)
+  * Per-scene FPS теперь включает `transition_7 T=211-213s (4 samples)` и
+    `lava_cracks T=213-223s avg=46.1 FPS (19 samples)`
+  * `[Capture] Saved shot_lava.bmp` at T=215
+  * Full show: T=0 to 223.00s, 9835 frames, avg=44.16 FPS
+
+### Интеграция с motus
+
+Ветка `v61.2` смерджена в `main` репозитория `Candary/Demoscene` без конфликтов
+с motus package (cherry-pick чистого v61.2 commit'а поверх `c0c6fb4 Add motus
+motion-core package + Uroboros integration`).
+
+### Рекомендации для следующих релизов
+
+1. **CI обязателен** — `.github/workflows/shader-check.yml` теперь ловит любой regression
+   в шейдерах и SMT структуре до попадания в main.
+2. **Логирование ошибок компиляции**: в `gl_executor.hpp::compileShader()` заменить
+   `fprintf(stderr, ...)` на вызов `Log()` — иначе ошибки не попадают в trace.log.
+3. **Имена функций**: избегать `noise1/2/3/4`, `texture*`, `shadow*` — все зарезервированы.
+4. **Тестовый запуск `--still`**: после правок шейдеров прогонять
+   `demo_runtime.exe demo.smt --still 2 --out still.png --repeat 3` для каждой сцены.
+
+---
+
+## v61.1 — 2026-11-11 (исходный текст ниже)
+
 ## Найденные дефекты
+
 
 ### 1. PNG-писатель отдавал битые файлы (все PNG из F2/F3)
 

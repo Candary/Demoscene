@@ -1,0 +1,118 @@
+name: Shader compile check
+
+on:
+  push:
+    paths:
+      - 'demo_intro_v61/shaders/**'
+      - 'demo_intro_v61/demo.smt'
+      - '.github/workflows/shader-check.yml'
+  pull_request:
+    paths:
+      - 'demo_intro_v61/shaders/**'
+      - 'demo_intro_v61/demo.smt'
+      - '.github/workflows/shader-check.yml'
+
+jobs:
+  glsl-compile:
+    name: glslangValidator strict compile (GLSL 330 core)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install glslangValidator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools
+      - name: Compile all fragment shaders
+        run: |
+          set -e
+          FAIL=0
+          SHADER_COUNT=0
+          for f in demo_intro_v61/shaders/*.frag; do
+            SHADER_COUNT=$((SHADER_COUNT+1))
+            echo "::group::Compiling $f"
+            if glslangValidator --glsl-version 330 -S frag "$f"; then
+              echo "::endgroup::"
+            else
+              echo "::error file=$f,title=GLSL compile error::$f failed to compile with glslangValidator (GLSL 330 core)"
+              FAIL=$((FAIL+1))
+              echo "::endgroup::"
+            fi
+          done
+          echo ""
+          echo "Shaders checked: $SHADER_COUNT"
+          echo "Failures: $FAIL"
+          if [ "$FAIL" -ne 0 ]; then
+            exit 1
+          fi
+
+  smt-sanity:
+    name: SMT structure sanity check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify demo.smt segments continuity
+        run: |
+          python3 - <<'EOF'
+          import sys
+          with open('demo_intro_v61/demo.smt') as f:
+              lines = f.read().split('\n')
+
+          # Parse segments
+          segs = []
+          ops_in_seg = 0
+          for line in lines:
+              s = line.strip()
+              if s.startswith('seg '):
+                  parts = s.split()
+                  segs.append({
+                      'start': float(parts[1]),
+                      'end': float(parts[2]),
+                      'cost': int(parts[3]),
+                      'fbos': int(parts[4]),
+                      'ops': 0,
+                      'line': lines.index(line) + 1,
+                  })
+                  ops_in_seg = 0
+              elif s.startswith('op '):
+                  ops_in_seg += 1
+              elif s.startswith('endseg'):
+                  if segs:
+                      segs[-1]['ops'] = ops_in_seg
+
+          # Check continuity
+          prev_end = 0
+          errors = []
+          for s in segs:
+              gap = s['start'] - prev_end
+              if abs(gap) > 0.01:
+                  errors.append(
+                      f"GAP between segments: prev_end={prev_end}, next start={s['start']} (line {s['line']})"
+                  )
+              prev_end = s['end']
+
+          # Check that last segment ends at duration
+          meta = next((l for l in lines if l.startswith('meta ')), None)
+          if meta:
+              duration = float(meta.split()[1])
+              if abs(prev_end - duration) > 0.01:
+                  errors.append(
+                      f"Last segment end ({prev_end}) != meta duration ({duration})"
+                  )
+
+          # Check fin clip has effect="finish"
+          fin_line = next((l for l in lines if l.strip().startswith('clip fin ')), None)
+          if fin_line and 'finish' not in fin_line.split()[3]:
+              errors.append(
+                  f"fin clip effect should be 'finish', got '{fin_line.split()[3]}'"
+              )
+
+          if errors:
+              print("SMT sanity check FAILED:")
+              for e in errors:
+                  print(f"  ERROR: {e}")
+              sys.exit(1)
+          else:
+              print(f"SMT sanity OK: {len(segs)} segments, duration={prev_end}s, all continuous")
+              for s in segs:
+                  print(f"  seg {s['start']:6.1f}-{s['end']:6.1f}  ops={s['ops']}  cost={s['cost']} fbos={s['fbos']}")
+          EOF
