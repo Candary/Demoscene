@@ -1,20 +1,10 @@
-[Start] Demo Runtime — loading demo.smt
-[OK] SMT loaded: duration=223.0s, 22 clips, 15 segments
-  clip 's1' effect='nebula_raymarch' opacity_tokens=1 progress_tokens=4 uniforms=5
-  clip 's2' effect='sphere_scene' opacity_tokens=1 progress_tokens=4 uniforms=3
+[Start] Demo Runtime — loading demo_v63.smt
+[OK] SMT loaded: duration=45.0s, 12 clips, 5 segments
+  clip 's1' effect='dawn' opacity_tokens=1 progress_tokens=4 uniforms=5
+  clip 's2' effect='spire' opacity_tokens=1 progress_tokens=4 uniforms=5
+  clip 's3' effect='fall' opacity_tokens=1 progress_tokens=4 uniforms=5
   clip 't1' effect='crossfade' opacity_tokens=1 progress_tokens=4 uniforms=0
-  clip 's3' effect='particle_swarm' opacity_tokens=1 progress_tokens=4 uniforms=3
-  clip 't2' effect='flash' opacity_tokens=1 progress_tokens=4 uniforms=2
-  clip 's4' effect='anxiety_mist' opacity_tokens=1 progress_tokens=4 uniforms=5
-  clip 't3' effect='crossfade' opacity_tokens=1 progress_tokens=4 uniforms=0
-  clip 's5' effect='morph_grid' opacity_tokens=1 progress_tokens=4 uniforms=3
-  clip 't4' effect='flash' opacity_tokens=1 progress_tokens=4 uniforms=2
-  clip 's6' effect='cozy_room_sdf' opacity_tokens=1 progress_tokens=4 uniforms=2
-  clip 't5' effect='crossfade' opacity_tokens=1 progress_tokens=4 uniforms=0
-  clip 's7' effect='morphing_figures' opacity_tokens=1 progress_tokens=4 uniforms=0
-  clip 't6' effect='crossfade' opacity_tokens=1 progress_tokens=4 uniforms=0
-  clip 't7' effect='crossfade' opacity_tokens=1 progress_tokens=4 uniforms=0
-  clip 's8' effect='lava_cracks' opacity_tokens=1 progress_tokens=4 uniforms=5
+  clip 't2' effect='bloom_transition' opacity_tokens=1 progress_tokens=4 uniforms=2
   clip 'blm_bright' effect='bloom_bright' opacity_tokens=1 progress_tokens=4 uniforms=2
   clip 'blm_blurh' effect='bloom_blur' opacity_tokens=1 progress_tokens=4 uniforms=1
   clip 'blm_blurv' effect='bloom_blur' opacity_tokens=1 progress_tokens=4 uniforms=1
@@ -22,88 +12,36 @@
   clip 'vig' effect='vignette' opacity_tokens=1 progress_tokens=4 uniforms=2
   clip 'grn' effect='grain' opacity_tokens=1 progress_tokens=4 uniforms=2
   clip 'fin' effect='finish' opacity_tokens=1 progress_tokens=4 uniforms=0
-[Window] HWND=000000000022085C created at (312,160) size 1296x759 (client 1280x720)
+[Window] HWND=0000000000180990 created at (312,160) size 1296x759 (client 1280x720)
 [Window] Visible=true, foreground set
 [GL] NVIDIA GeForce GTX 750/PCIe/SSE2 / 3.3.0 NVIDIA 560.94
-[OK] 21 shader programs compiled
-[Loop] Entering render loop, duration=223.0s
+[OK] 11 shader programs compiled
+[Loop] Entering render loop, duration=45.0s
 [Help] F1 = toggle FPS | F2 = capture BMP | F3 = toggle recording | min/max/avg tracked always
 [Loop] First frame rendered, T=0.003s
-[Quality] LOW (steps=24, FPS=23.5)
-[Capture] Saved shot_nebula.bmp (1280x720 → 640x360)
-[Loop] T=5.01s frames=139
-[Loop] T=10.02s frames=283
-[Loop] T=15.03s frames=428
-[Loop] T=20.06s frames=573
-[Loop] T=25.08s frames=715
-[Capture] Saved shot_sphere.bmp (1280x720 → 640x360)
-[Loop] T=30.10s frames=890
-[Quality] HIGH (steps=40, FPS=49.8)
-[Loop] T=35.10s frames=1124
-[Loop] T=40.11s frames=1349
-[Loop] T=45.12s frames=1587
-[Loop] T=50.12s frames=1818
-[Capture] Saved shot_particles.bmp (1280x720 → 640x360)
-[Loop] T=55.13s frames=2075
-[Loop] T=60.15s frames=2314
-[Loop] T=65.17s frames=2548
-[Loop] T=70.17s frames=2779
-[Loop] T=75.17s frames=3019
-[Capture] Saved shot_anxiety.bmp (1280x720 → 640x360)
-[Loop] T=80.20s frames=3254
-[Loop] T=85.20s frames=3496
-[Loop] T=90.21s frames=3727
-[Loop] T=95.22s frames=3972
-[Loop] T=100.23s frames=4198
-[Capture] Saved shot_morph_grid.bmp (1280x720 → 640x360)
-[Loop] T=105.24s frames=4433
-[Loop] T=110.25s frames=4666
-[Loop] T=115.25s frames=4902
-[Loop] T=120.26s frames=5139
-[Loop] T=125.26s frames=5360
-[Capture] Saved shot_cozy_room.bmp (1280x720 → 640x360)
-[Loop] T=130.27s frames=5587
-[Loop] T=135.28s frames=5819
-[Loop] T=140.29s frames=6041
-[Loop] T=145.30s frames=6253
-[Loop] T=150.31s frames=6464
-[Loop] T=155.32s frames=6699
-[Loop] T=160.34s frames=6925
-[Loop] T=165.34s frames=7153
-[Loop] T=170.34s frames=7378
-[Loop] T=175.35s frames=7623
-[Loop] T=180.38s frames=7854
-[Capture] Saved shot_morphing_figures.bmp (1280x720 → 640x360)
-[Loop] T=185.39s frames=8082
-[Loop] T=190.40s frames=8305
-[Loop] T=195.41s frames=8549
-[Loop] T=200.44s frames=8786
-[Loop] T=205.45s frames=9021
-[Loop] T=210.46s frames=9253
-[Loop] T=215.47s frames=9490
-[Capture] Saved shot_lava.bmp (1280x720 → 640x360)
-[Loop] T=220.47s frames=9726
-[Done] Show finished at T=223.00s, frames=9835
-[Loop] Exited, total frames=9835
-[Stats] FPS over 223.00s (435 samples @ 0.5s window):
-  sampled:     min=23.14  max=58.94  avg=44.16  FPS
-  theoretical: 9835 frames / 223.00s = 44.10 FPS
-  range:       35.8 FPS (max-min = 35.8)
+[Capture] Saved shot_dawn.bmp (1280x720 → 640x360)
+[Loop] T=5.01s frames=238
+[Loop] T=10.01s frames=476
+[Loop] T=15.03s frames=693
+[Capture] Saved shot_spire.bmp (1280x720 → 640x360)
+[Loop] T=20.03s frames=923
+[Capture] Saved shot_transition_bloom.bmp (1280x720 → 640x360)
+[Loop] T=25.04s frames=1165
+[Loop] T=30.06s frames=1398
+[Loop] T=35.06s frames=1611
+[Capture] Saved shot_fall.bmp (1280x720 → 640x360)
+[Loop] T=40.07s frames=1845
+[Done] Show finished at T=45.02s, frames=2086
+[Loop] Exited, total frames=2086
+[Stats] FPS over 45.02s (88 samples @ 0.5s window):
+  sampled:     min=35.72  max=55.08  avg=46.35  FPS
+  theoretical: 2086 frames / 45.02s = 46.33 FPS
+  range:       19.4 FPS (max-min = 19.4)
   quality:     HIGH (nebula steps=40)
   per-scene:
-    nebula               T=    0-   23s (  23s)  min= 23.1  max= 34.8  avg= 28.6  FPS  (44 samples)
-    transition_1         T=   23-   27s (   4s)  min= 27.3  max= 27.9  avg= 27.4  FPS  (7 samples)
-    sphere               T=   27-   48s (  21s)  min= 27.5  max= 53.4  avg= 45.0  FPS  (42 samples)
-    transition_2         T=   48-   52s (   4s)  min= 33.3  max= 49.9  avg= 47.4  FPS  (7 samples)
-    particle_swarm       T=   52-   73s (  21s)  min= 38.3  max= 56.7  avg= 47.5  FPS  (41 samples)
-    transition_3         T=   73-   77s (   4s)  min= 48.4  max= 53.3  avg= 49.5  FPS  (8 samples)
-    anxiety_mist         T=   77-   98s (  21s)  min= 39.5  max= 56.9  avg= 47.4  FPS  (41 samples)
-    transition_4         T=   98-  102s (   4s)  min= 37.6  max= 49.2  avg= 42.2  FPS  (8 samples)
-    morph_grid           T=  102-  123s (  21s)  min= 41.5  max= 57.0  avg= 47.5  FPS  (41 samples)
-    transition_5         T=  123-  127s (   4s)  min= 37.6  max= 49.7  avg= 42.1  FPS  (8 samples)
-    cozy_room            T=  127-  180s (  53s)  min= 33.8  max= 58.9  avg= 45.2  FPS  (104 samples)
-    transition_6         T=  180-  181s (   1s)  min= 46.3  max= 51.3  avg= 48.8  FPS  (2 samples)
-    morphing_figures     T=  181-  211s (  30s)  min= 36.6  max= 58.9  avg= 46.6  FPS  (59 samples)
-    transition_7         T=  211-  213s (   2s)  min= 42.0  max= 54.5  avg= 50.3  FPS  (4 samples)
-    lava_cracks          T=  213-  223s (  10s)  min= 40.5  max= 51.3  avg= 46.1  FPS  (19 samples)
+    dawn                 T=    0-   12s (  12s)  min= 43.2  max= 53.3  avg= 47.6  FPS  (23 samples)
+    transition_1         T=   12-   16s (   4s)  min= 35.7  max= 51.1  avg= 42.6  FPS  (9 samples)
+    spire                T=   16-   28s (  12s)  min= 40.3  max= 53.0  avg= 47.2  FPS  (23 samples)
+    transition_2         T=   28-   33s (   4s)  min= 36.5  max= 49.2  avg= 42.9  FPS  (9 samples)
+    fall                 T=   33-   45s (  12s)  min= 37.5  max= 55.1  avg= 47.1  FPS  (24 samples)
 [Exit] Demo Runtime ended

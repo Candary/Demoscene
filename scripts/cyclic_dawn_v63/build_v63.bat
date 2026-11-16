@@ -11,7 +11,7 @@ set OUT=demo_runtime_v63.exe
 set INCLUDES=/I.
 set LIBS=opengl32.lib user32.lib gdi32.lib
 set FLAGS=/std:c++17 /EHsc /O2 /W3 /MT /nologo
-set CFLAGS=%FLAGS% /D_CRT_SECURE_NO_WARNINGS /DWIN32_LEAN_AND_MEAN
+set CFLAGS=%FLAGS%
 
 echo [build] compiling %SRC% ...
 cl %CFLAGS% %INCLUDES% %SRC% /link %LIBS% /OUT:%OUT%
