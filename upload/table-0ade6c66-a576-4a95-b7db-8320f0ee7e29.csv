@@ -1,0 +1,7 @@
+﻿Стратегия,Описание,Пример
+SDF Composition DSL,Добавить операторы union/intersection/subtraction/smooth-min как first-class atoms,"Atom(""city_block"") = smooth_union(tower, tower, k=0.3)"
+Domain Warping Atoms,"Атомы, которые не рисуют форму, а искажают UV/поле","Atom(""fluid_warp"") = warp(fbm, strength=2.0)"
+Particle Atoms,"Не SDF, а точечные эмиттеры с физикой","Atom(""rain"") = emit(count=2000, gravity=9.8, life=2.0)"
+Procedural Grid Atoms,Repeat + jitter для city/wireframe,"Atom(""tower_grid"") = repeat(sdBox, cell=16.0, jitter=0.3)"
+Runtime Parameterization,Атомы принимают uniform-параметры из Motus/beat,"Atom(""pulse_tri"").scale = 1.0 + 0.3*beat"
+Shader Macro Expansion,Python-генератор разворачивает атомы в GLSL-код до компиляции,`{{atom.fluid_warp
