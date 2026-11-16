@@ -1,0 +1,44 @@
+[Start] Demo Runtime v63 (GLFW) — loading demo_v63.smt
+[OK] SMT loaded: duration=45.0s, 12 clips, 5 segments
+  clip 's1' effect='dawn' opacity_tokens=1 progress_tokens=4 uniforms=5
+  clip 's2' effect='spire' opacity_tokens=1 progress_tokens=4 uniforms=5
+  clip 's3' effect='fall' opacity_tokens=1 progress_tokens=4 uniforms=5
+  clip 't1' effect='crossfade' opacity_tokens=1 progress_tokens=4 uniforms=0
+  clip 't2' effect='bloom_transition' opacity_tokens=1 progress_tokens=4 uniforms=2
+  clip 'blm_bright' effect='bloom_bright' opacity_tokens=1 progress_tokens=4 uniforms=2
+  clip 'blm_blurh' effect='bloom_blur' opacity_tokens=1 progress_tokens=4 uniforms=1
+  clip 'blm_blurv' effect='bloom_blur' opacity_tokens=1 progress_tokens=4 uniforms=1
+  clip 'blm_add' effect='passthrough' opacity_tokens=1 progress_tokens=4 uniforms=0
+  clip 'vig' effect='vignette' opacity_tokens=1 progress_tokens=4 uniforms=2
+  clip 'grn' effect='grain' opacity_tokens=1 progress_tokens=4 uniforms=2
+  clip 'fin' effect='finish' opacity_tokens=1 progress_tokens=4 uniforms=0
+[GL] llvmpipe (LLVM 19.1.7, 256 bits) / 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1
+[OK] 11 shader programs compiled
+[Loop] Entering render loop, duration=45.0s
+[Help] F1=FPS | F2=capture BMP | F3=record | ESC=quit
+[Loop] First frame T=0.000s
+[Quality] LOW (FPS=7.8)
+[Capture] Saved shot_dawn.bmp (1280x720 -> 640x360)
+[Loop] T=5.06s frames=33
+[Loop] T=10.12s frames=65
+[Loop] T=15.27s frames=95
+[Capture] Saved shot_spire.bmp (1280x720 -> 640x360)
+[Loop] T=20.31s frames=140
+[Capture] Saved shot_transition_bloom.bmp (1280x720 -> 640x360)
+[Loop] T=25.37s frames=191
+[Loop] T=30.42s frames=236
+[Loop] T=35.52s frames=275
+[Capture] Saved shot_fall.bmp (1280x720 -> 640x360)
+[Loop] T=40.63s frames=318
+[Done] T=45.05s frames=354
+[Loop] Exited, total frames=354
+[Stats] FPS over 45.05s (76 samples):
+  sampled:     min=5.45  max=10.57  avg=7.88
+  theoretical: 354 frames / 45.05s = 7.86 FPS
+  per-scene:
+    dawn               T=  0.0- 12.0s (12.0s)  min=  5.9 max=  7.8 avg=  6.4 FPS (19 samples)
+    transition_1       T= 12.0- 16.5s ( 4.5s)  min=  5.5 max=  5.8 avg=  5.7 FPS (8 samples)
+    spire              T= 16.5- 28.5s (12.0s)  min=  7.1 max= 10.6 avg=  9.9 FPS (21 samples)
+    transition_2       T= 28.5- 33.0s ( 4.5s)  min=  6.7 max=  8.1 avg=  7.1 FPS (7 samples)
+    fall               T= 33.0- 45.0s (12.0s)  min=  7.0 max=  8.8 avg=  8.3 FPS (21 samples)
+[Exit] Demo Runtime v63 ended

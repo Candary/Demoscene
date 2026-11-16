@@ -1,0 +1,17 @@
+[Start] Demo Runtime v63 (GLFW) — loading /home/z/my-project/scripts/cyclic_dawn_v63/demo_v63.smt
+[OK] SMT loaded: duration=45.0s, 12 clips, 5 segments
+  clip 's1' effect='dawn' opacity_tokens=1 progress_tokens=4 uniforms=5
+  clip 's2' effect='spire' opacity_tokens=1 progress_tokens=4 uniforms=5
+  clip 's3' effect='fall' opacity_tokens=1 progress_tokens=4 uniforms=5
+  clip 't1' effect='crossfade' opacity_tokens=1 progress_tokens=4 uniforms=0
+  clip 't2' effect='bloom_transition' opacity_tokens=1 progress_tokens=4 uniforms=2
+  clip 'blm_bright' effect='bloom_bright' opacity_tokens=1 progress_tokens=4 uniforms=2
+  clip 'blm_blurh' effect='bloom_blur' opacity_tokens=1 progress_tokens=4 uniforms=1
+  clip 'blm_blurv' effect='bloom_blur' opacity_tokens=1 progress_tokens=4 uniforms=1
+  clip 'blm_add' effect='passthrough' opacity_tokens=1 progress_tokens=4 uniforms=0
+  clip 'vig' effect='vignette' opacity_tokens=1 progress_tokens=4 uniforms=2
+  clip 'grn' effect='grain' opacity_tokens=1 progress_tokens=4 uniforms=2
+  clip 'fin' effect='finish' opacity_tokens=1 progress_tokens=4 uniforms=0
+[GL] llvmpipe (LLVM 19.1.7, 256 bits) / 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1
+[OK] 0 shader programs compiled
+[Still] Saved /home/z/my-project/scripts/cyclic_dawn_v63/shot_dawn_test.bmp at T=6.00s (warmup=1)
