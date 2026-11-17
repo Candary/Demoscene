@@ -1,47 +1,44 @@
-[Start] Demo Runtime — loading demo_v63.smt
-[OK] SMT loaded: duration=45.0s, 12 clips, 5 segments
-  clip 's1' effect='dawn' opacity_tokens=1 progress_tokens=4 uniforms=5
-  clip 's2' effect='spire' opacity_tokens=1 progress_tokens=4 uniforms=5
-  clip 's3' effect='fall' opacity_tokens=1 progress_tokens=4 uniforms=5
-  clip 't1' effect='crossfade' opacity_tokens=1 progress_tokens=4 uniforms=0
-  clip 't2' effect='bloom_transition' opacity_tokens=1 progress_tokens=4 uniforms=2
-  clip 'blm_bright' effect='bloom_bright' opacity_tokens=1 progress_tokens=4 uniforms=2
-  clip 'blm_blurh' effect='bloom_blur' opacity_tokens=1 progress_tokens=4 uniforms=1
-  clip 'blm_blurv' effect='bloom_blur' opacity_tokens=1 progress_tokens=4 uniforms=1
-  clip 'blm_add' effect='passthrough' opacity_tokens=1 progress_tokens=4 uniforms=0
-  clip 'vig' effect='vignette' opacity_tokens=1 progress_tokens=4 uniforms=2
-  clip 'grn' effect='grain' opacity_tokens=1 progress_tokens=4 uniforms=2
-  clip 'fin' effect='finish' opacity_tokens=1 progress_tokens=4 uniforms=0
-[Window] HWND=0000000000180990 created at (312,160) size 1296x759 (client 1280x720)
-[Window] Visible=true, foreground set
-[GL] NVIDIA GeForce GTX 750/PCIe/SSE2 / 3.3.0 NVIDIA 560.94
-[OK] 11 shader programs compiled
-[Loop] Entering render loop, duration=45.0s
-[Help] F1 = toggle FPS | F2 = capture BMP | F3 = toggle recording | min/max/avg tracked always
-[Loop] First frame rendered, T=0.003s
-[Capture] Saved shot_dawn.bmp (1280x720 → 640x360)
-[Loop] T=5.01s frames=238
-[Loop] T=10.01s frames=476
-[Loop] T=15.03s frames=693
-[Capture] Saved shot_spire.bmp (1280x720 → 640x360)
-[Loop] T=20.03s frames=923
-[Capture] Saved shot_transition_bloom.bmp (1280x720 → 640x360)
-[Loop] T=25.04s frames=1165
-[Loop] T=30.06s frames=1398
-[Loop] T=35.06s frames=1611
-[Capture] Saved shot_fall.bmp (1280x720 → 640x360)
-[Loop] T=40.07s frames=1845
-[Done] Show finished at T=45.02s, frames=2086
-[Loop] Exited, total frames=2086
-[Stats] FPS over 45.02s (88 samples @ 0.5s window):
-  sampled:     min=35.72  max=55.08  avg=46.35  FPS
-  theoretical: 2086 frames / 45.02s = 46.33 FPS
-  range:       19.4 FPS (max-min = 19.4)
-  quality:     HIGH (nebula steps=40)
+
+--- new run ---
+[Start] uCleaner v63 Win32 — args: 1280 720 .\demo_v63.uc 1.00
+  entity scene[0] shader=dawn start=0.00 end=12.00 intensity=1.10
+  entity scene[1] shader=trans_crossfade start=12.00 end=16.50 intensity=1.00
+  entity scene[2] shader=spire start=16.50 end=28.50 intensity=1.30
+  entity scene[3] shader=trans_bloom start=28.50 end=33.00 intensity=1.20
+  entity scene[4] shader=fall start=33.00 end=45.00 intensity=1.00
+[OK] uLang loaded: 5 scenes, 3 palettes, 3 timeline_patterns, 1 camera
+[Window] HWND=0000000001230460 size 1280x720
+[GL] vendor=NVIDIA Corporation renderer=NVIDIA GeForce GTX 750/PCIe/SSE2 version=3.3.0 NVIDIA 560.94
+[Shader] dawn compiled OK (program=3)
+[Shader] spire compiled OK (program=6)
+[Shader] fall compiled OK (program=9)
+[Shader] trans_crossfade compiled OK (program=12)
+[Shader] trans_bloom compiled OK (program=15)
+[OK] 5 shader programs compiled
+[Loop] Entering render loop, duration=45.0s, target_fps=60, time_scale=1.00
+[Help] ESC or close window to exit early; trace.log records all output
+[Scene] idx=0 shader=dawn (T=0.00s)
+[Loop] First frame T=0.001s
+[36m[Uroboros✓][0m[33m[SceneMgr✓][0m[35m[Motus✓][0m[32m[CozyEng✓][0m[31m[ColorMatrix✓][0m[34m[Synth✓][0m [Loop] T=5.01s frames=300 scene=0 shader=dawn beat=0.00 bpm=128 I=1.1
+[36m[Uroboros✓][0m[33m[SceneMgr✓][0m[35m[Motus✓][0m[32m[CozyEng✓][0m[31m[ColorMatrix✓][0m[34m[Synth✓][0m [Loop] T=10.02s frames=601 scene=0 shader=dawn beat=0.02 bpm=128 I=1.1
+[Scene] idx=1 shader=trans_crossfade (T=12.00s)
+[36m[Uroboros✓][0m[33m[SceneMgr✓][0m[35m[Motus✓][0m[32m[CozyEng✓][0m[31m[ColorMatrix✓][0m[34m[Synth✓][0m [Loop] T=15.04s frames=902 scene=1 shader=trans_crossfade beat=0.09 bpm=128 I=1.0
+[Scene] idx=2 shader=spire (T=16.51s)
+[36m[Uroboros✓][0m[33m[SceneMgr✓][0m[35m[Motus✓][0m[32m[CozyEng✓][0m[31m[ColorMatrix✓][0m[34m[Synth✓][0m [Loop] T=20.04s frames=1202 scene=2 shader=spire beat=0.00 bpm=128 I=1.3
+[36m[Uroboros✓][0m[33m[SceneMgr✓][0m[35m[Motus✓][0m[32m[CozyEng✓][0m[31m[ColorMatrix✓][0m[34m[Synth✓][0m [Loop] T=25.05s frames=1502 scene=2 shader=spire beat=0.02 bpm=128 I=1.3
+[Scene] idx=3 shader=trans_bloom (T=28.51s)
+[36m[Uroboros✓][0m[33m[SceneMgr✓][0m[35m[Motus✓][0m[32m[CozyEng✓][0m[31m[ColorMatrix✓][0m[34m[Synth✓][0m [Loop] T=30.06s frames=1803 scene=3 shader=trans_bloom beat=0.02 bpm=128 I=1.2
+[Scene] idx=4 shader=fall (T=33.01s)
+[36m[Uroboros✓][0m[33m[SceneMgr✓][0m[35m[Motus✓][0m[32m[CozyEng✓][0m[31m[ColorMatrix✓][0m[34m[Synth✓][0m [Loop] T=35.07s frames=2104 scene=4 shader=fall beat=0.14 bpm=128 I=1.0
+[36m[Uroboros✓][0m[33m[SceneMgr✓][0m[35m[Motus✓][0m[32m[CozyEng✓][0m[31m[ColorMatrix✓][0m[34m[Synth✓][0m [Loop] T=40.07s frames=2404 scene=4 shader=fall beat=0.00 bpm=128 I=1.0
+[Done] Demo finished at T=45.01s, frames=2700
+[Stats] FPS over 45.01s (88 samples):
+  sampled:     min=58.78  max=61.49  avg=60.01
+  theoretical: 2700 frames / 45.01s = 59.99 FPS
   per-scene:
-    dawn                 T=    0-   12s (  12s)  min= 43.2  max= 53.3  avg= 47.6  FPS  (23 samples)
-    transition_1         T=   12-   16s (   4s)  min= 35.7  max= 51.1  avg= 42.6  FPS  (9 samples)
-    spire                T=   16-   28s (  12s)  min= 40.3  max= 53.0  avg= 47.2  FPS  (23 samples)
-    transition_2         T=   28-   33s (   4s)  min= 36.5  max= 49.2  avg= 42.9  FPS  (9 samples)
-    fall                 T=   33-   45s (  12s)  min= 37.5  max= 55.1  avg= 47.1  FPS  (24 samples)
-[Exit] Demo Runtime ended
+    dawn               T=  0.0- 12.0s (12.0s)  min= 58.78 max= 61.40 avg= 60.08 FPS (23 samples)
+    trans_crossfade    T= 12.0- 16.5s ( 4.5s)  min= 59.10 max= 61.24 avg= 59.95 FPS ( 9 samples)
+    spire              T= 16.5- 28.5s (12.0s)  min= 58.95 max= 61.49 avg= 60.02 FPS (24 samples)
+    trans_bloom        T= 28.5- 33.0s ( 4.5s)  min= 59.21 max= 61.31 avg= 59.93 FPS ( 9 samples)
+    fall               T= 33.0- 45.0s (12.0s)  min= 58.98 max= 61.45 avg= 59.99 FPS (23 samples)
+[Exit] uCleaner v63 Win32 ended (rendered=2700, scene_switches=5, wall=45.01s)
