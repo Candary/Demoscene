@@ -1,0 +1,9 @@
+{
+  "name": "text_to_scene_demo",
+  "preset": "text_to_scene",
+  "values": {
+    "text": "epic cold city with huge metal towers",
+    "shape": "torus",
+    "chain": "punchy"
+  }
+}

@@ -34,6 +34,7 @@ public:
     Status set_float(EntityId entity, uint32_t name_hash, float value, uint32_t expected_version = 0) {
         Field* f = props.get_field(entity, name_hash);
         if (!f) return Status::InvalidField;
+        // Fix #2: use local_slot (0..31) for FieldId, not global index
         FieldId field_id = make_field_id(entity, f->slot);
         Patch p = patches.create_patch();
         patches.patch_set_float(p, field_id, name_hash, value, expected_version);
@@ -49,6 +50,7 @@ public:
     Status set_float_batch(EntityId entity, uint32_t name_hash, float value, uint32_t expected_version = 0) {
         Field* f = props.get_field(entity, name_hash);
         if (!f) return Status::InvalidField;
+        // Fix #2: use local_slot
         FieldId field_id = make_field_id(entity, f->slot);
         Patch p = patches.create_patch();
         patches.patch_set_float(p, field_id, name_hash, value, expected_version);

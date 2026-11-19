@@ -34,6 +34,28 @@ enum class Status : int {
     InvalidReference=12,
 };
 
+// nxGen compatibility: status name + ok helper for CLI diagnostics.
+inline const char* status_name(Status s) {
+    switch (s) {
+        case Status::Ok:              return "ok";
+        case Status::InvalidEntity:   return "invalid_entity";
+        case Status::InvalidField:    return "invalid_field";
+        case Status::VersionMismatch: return "version_mismatch";
+        case Status::CycleDetected:   return "cycle_detected";
+        case Status::DepthExceeded:   return "depth_exceeded";
+        case Status::NotFound:        return "not_found";
+        case Status::ParseError:      return "parse_error";
+        case Status::TypeMismatch:    return "type_mismatch";
+        case Status::SelfReference:   return "self_reference";
+        case Status::AlreadyExists:   return "already_exists";
+        case Status::OutOfMemory:     return "out_of_memory";
+        case Status::InvalidReference:return "invalid_reference";
+    }
+    return "unknown";
+}
+
+inline bool ok(Status s) { return s == Status::Ok; }
+
 constexpr size_t MAX_ENTITIES = 4096;
 constexpr size_t MAX_FIELDS_PER_ENTITY = 32;
 
